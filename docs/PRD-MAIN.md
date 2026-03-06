@@ -128,12 +128,34 @@ High-level system diagram:
         |
         | HTTPS
         ↓
-  [React Frontend] ──── calls ────► [ConnectX FastAPI Backend]
-                                            |
-                          ┌─────────────────┼──────────────────┐
-                          ↓                 ↓                  ↓
-                   [PostgreSQL DB]    [AutoNXT API]       [CARE API]
-                   (ConnectX data)    (test results)      (monitoring)
+  [React Frontend]
+  ├── Integration Library
+  ├── Lab Validation
+  ├── Automated Testing
+  ├── Agentic Monitor
+  ├── Support & Incidents
+  └── User Management
+        |
+        | REST API calls (Axios + JWT)
+        ↓
+  [ConnectX FastAPI Backend]
+  ├── /api/v1/integration    ← Integration Library module
+  ├── /api/v1/lab            ← Lab Validation module
+  ├── /api/v1/testing        ← Automated Testing module
+  ├── /api/v1/monitor        ← Agentic Monitor module
+  ├── /api/v1/support        ← Support & Incidents module
+  └── /api/v1/users          ← User Management module
+        |
+        ├──────────────────────────────────────┐
+        ↓                    ↓                 ↓
+  [PostgreSQL DB]      [AutoNXT API]      [CARE API]
+  (ConnectX data)      (test results)     (monitoring)
+  ├── tenants          Used by:           Used by:
+  ├── users            └── /testing       └── /monitor
+  ├── connectors
+  ├── tickets
+  └── tenant_product
+      _mapping
 
 Auth flow:
   - User logs into ConnectX
