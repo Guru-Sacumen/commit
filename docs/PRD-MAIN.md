@@ -198,6 +198,11 @@ TENANT & DATA ISOLATION RULES FOR AI:
     Org-level data (connectors, labs, monitors) → filter by tenant_id
     User actions (who did what)                 → tracked by user_id
     Example: raised_by = user_id on tickets table
+    
+Deployment: 
+    Docker (single container — monolithic)
+    docker-compose for local development
+    All modules live in one codebase, one container
 
 ================================================================================
 5. FOLDER STRUCTURE
