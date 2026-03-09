@@ -1,5 +1,4 @@
-================================================================================
-PRD-MAIN.txt — ConnectX Enterprise Security Integration Platform
+## PRD-MAIN.txt — ConnectX Enterprise Security Integration Platform
 Document Type   : Main Product Requirements Document
 Version         : 1.1
 Status          : Draft — Pending UI Freeze & CARE/AutoNXT API Confirmation
@@ -7,7 +6,6 @@ Owner           : Prasanna
 Review          : Suthan (Architect)
 Organisation    : Sacumen
 Last Updated    : 2026-03-06
-================================================================================
 
 IMPORTANT NOTE FOR AI (WINDSURF):
 This is the master PRD. Always load this file alongside the module-level PRD
@@ -16,9 +14,8 @@ auth rules, and architecture decisions that every module must follow.
 Never deviate from the rules defined here unless explicitly overridden in a
 module-level PRD.
 
-================================================================================
-TABLE OF CONTENTS
-================================================================================
+
+## TABLE OF CONTENTS
 
 1.  Product Overview
 2.  Company & Project Context
@@ -38,9 +35,8 @@ TABLE OF CONTENTS
 16. Open Questions & Blockers
 17. Glossary
 
-================================================================================
-1. PRODUCT OVERVIEW
-================================================================================
+
+## 1. PRODUCT OVERVIEW
 
 ConnectX is a multi-tenant enterprise console built by Sacumen.
 It provides cybersecurity companies (customers) a single unified platform to:
@@ -64,9 +60,8 @@ Target Users:
   - Customer organisation admins (Org Admin)
   - Customer organisation end users (Org User)
 
-================================================================================
-2. COMPANY & PROJECT CONTEXT
-================================================================================
+
+## 2. COMPANY & PROJECT CONTEXT
 
 Sacumen builds security connectors for cybersecurity companies.
 ConnectX is the product that packages these connectors as a managed service
@@ -92,9 +87,8 @@ Related Sacumen Platforms:
                    (inputs, outputs, schemas per product).
                    Integration scope with ConnectX is TO BE CONFIRMED (OQ5).
 
-================================================================================
-3. TECH STACK
-================================================================================
+
+## 3. TECH STACK
 
 Backend     : Python 3.11+, FastAPI
 Database    : PostgreSQL 15 (primary)
@@ -114,9 +108,8 @@ Secrets     : TBD — AWS Secrets Manager / HashiCorp Vault / On-Premise
               Vault solution for connector credentials
               (confirm before storing any customer API keys)
 
-================================================================================
-4. SYSTEM ARCHITECTURE
-================================================================================
+
+## 4. SYSTEM ARCHITECTURE
 
 ConnectX follows a Monolithic architecture for V1.
 Single deployable backend (FastAPI), single PostgreSQL database,
@@ -226,9 +219,8 @@ Deployment:
     docker-compose for local development
     All modules live in one codebase, one container
 
-================================================================================
-5. FOLDER STRUCTURE
-================================================================================
+
+## 5. FOLDER STRUCTURE
 
 connectx/
 ├── docs/
@@ -352,9 +344,8 @@ connectx/
 ├── README.md
 └── docker-compose.yml                  ← local dev setup (optional)
 
-================================================================================
-6. MULTI-TENANCY MODEL
-================================================================================
+
+## 6. MULTI-TENANCY MODEL
 
 ConnectX uses a shared database, tenant-isolated multi-tenancy model.
 All tenants share one PostgreSQL database.
@@ -379,9 +370,8 @@ User provisioning:
   - System sends invite email with set-password link
   - User sets password, logs in with assigned role
 
-================================================================================
-7. AUTHENTICATION & AUTHORIZATION
-================================================================================
+
+## 7. AUTHENTICATION & AUTHORIZATION
 
 Auth method: JWT (JSON Web Tokens), OAuth2 password flow
 
@@ -425,9 +415,8 @@ Cross-service auth (AutoNXT, CARE):
   V2 (Post-RSA): CARE and AutoNXT will add JWT support.
   ConnectX will pass JWT directly. They extract tenant_id natively.
 
-================================================================================
-8. SUPER ADMIN TENANT SWITCHING (IMPERSONATION)
-================================================================================
+
+## 8. SUPER ADMIN TENANT SWITCHING (IMPERSONATION)
 
 Super Admin can switch into any tenant's view from the top-right org switcher.
 This is called "Tenant Switching" or "Impersonation."
@@ -480,9 +469,8 @@ API ENDPOINTS:
     Auth: super_admin only (when is_impersonating = true)
     Response: { access_token: "<original global JWT>" }
 
-================================================================================
-9. USER ROLES & PERMISSIONS (RBAC)
-================================================================================
+
+## 9. USER ROLES & PERMISSIONS (RBAC)
 
 Three roles exist in the system:
 
@@ -534,9 +522,8 @@ Permission matrix:
   Manage users in org             YES           YES         NO
   Invite users                    YES           YES         NO
 
-================================================================================
-10. DATABASE CONVENTIONS
-================================================================================
+
+## 10. DATABASE CONVENTIONS
 
 IMPORTANT FOR AI: Follow these conventions in every table and query.
 
@@ -566,9 +553,8 @@ Migrations:
   - Every migration must be reversible (has both upgrade and downgrade)
   - Never edit an existing migration — always create a new one
 
-================================================================================
-11. SHARED DATA MODELS
-================================================================================
+
+## 11. SHARED DATA MODELS
 
 These models are shared across modules. Defined once in backend/models/.
 Module-level PRDs reference these — they do not redefine them.
@@ -645,9 +631,8 @@ Module-level PRDs reference these — they do not redefine them.
   created_at          TIMESTAMP
   updated_at          TIMESTAMP
 
-================================================================================
-12. API CONVENTIONS
-================================================================================
+
+## 12. API CONVENTIONS
 
 Base URL       : /api/v1
 Auth header    : Authorization: Bearer <jwt_token>
@@ -688,9 +673,8 @@ IMPORTANT FOR AI:
   - Always validate input with Pydantic schemas
   - Never expose hashed_password or invite_token in any response
 
-================================================================================
-13. MODULE OVERVIEW
-================================================================================
+
+## 13. MODULE OVERVIEW
 
 Six modules. Each has its own PRD file in /docs.
 Build in this order — Module 0 first, others depend on it.
@@ -739,9 +723,8 @@ MODULE 5 — Support & Incidents          PRD: PRD-3-support-ticketing.txt
             (status updates, assignment, SLA tracking) happens only here.
             This module OWNS the tickets table.
 
-================================================================================
-14. INTEGRATION DEPENDENCIES
-================================================================================
+
+## 14. INTEGRATION DEPENDENCIES
 
 AutoNXT Integration:
   Status         : V1 workaround in place (JWT not yet supported by AutoNXT)
@@ -765,9 +748,8 @@ CARE Integration:
 Knowledge Base Integration:
   Status         : SCOPE NOT CONFIRMED (see OQ5)
 
-================================================================================
-15. TEAM STRUCTURE
-================================================================================
+
+## 15. TEAM STRUCTURE
 
 Module                        Team Members              Consult
 ──────────────────────────── ───────────────────────── ──────────────────────
@@ -792,66 +774,138 @@ Note on Guru:
   Guru is across two modules. Work on User Management PRD first (foundation),
   then Integration + Lab PRD. One branch at a time to avoid Git conflicts.
 
-================================================================================
-16. OPEN QUESTIONS & BLOCKERS
-================================================================================
 
-OQ1 — CRITICAL BLOCKER: AutoNXT and CARE API documentation
-  AutoNXT and CARE do not currently have JWT support.
-  V1 workaround agreed (see Section 14).
-  BUT: Team B cannot finalise PRD-2 until both teams share their existing
-  API documentation (endpoints, params, response format).
-  Action: Prasanna to request API docs from AutoNXT (Amulya/Sharon)
-          and CARE (Abhilash/Susheela) this week.
+## 16. FRONTEND ARCHITECTURE & STANDARDS
 
-OQ2 — Lab + AutoNXT integration scope
-  Is the Lab Validation module integrating with the existing AutoNXT Lab?
-  Or is ConnectX building the Lab independently?
-  If AutoNXT Lab is used: what API does it expose for ConnectX to call?
-  Action: Confirm with Suthan.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.1 TECH DECISIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-OQ3 — Live Sandbox model
-  Who owns and maintains Live Sandbox environments (real Splunk, QRadar etc)?
-  Options: (a) Sacumen maintains licensed test instances,
-           (b) customer provides their own test credentials,
-           (c) vendor partnerships.
-  What is the cost model for Live vs Virtual Sandbox?
-  Action: Confirm with manager/Suthan. Park Live Sandbox as Phase 2 if unclear.
+Language    : TypeScript (all frontend files use .tsx)
+Framework   : React 18 + Vite
+Routing     : React Router v6
+Styling     : Tailwind CSS (utility-first, no custom CSS files)
+Components  : Shadcn UI (built on Tailwind, copy-paste into codebase)
+Icons       : Lucide React
+HTTP        : Axios (base client, all API calls)
+Server State: React Query (TanStack Query v5)
+              Handles: caching, loading, error, refetch, pagination
+              Axios is used INSIDE React Query as the fetcher
+Forms       : React Hook Form + Zod validation
+Bundler     : Vite
 
-OQ4 — UI Freeze
-  PRDs are based on UI designs reviewed on 2026-03-04/05.
-  If UI is changing, PRDs must be updated before development starts.
-  Action: Schedule 30-minute UI review with manager this week. Freeze UI.
+NOT USED — remove from any module PRD if found:
+  Next.js      (wrong framework — ConnectX uses React + Vite)
+  Redux        (overkill — React Query handles server state)
+  fetch()      (use Axios instead — already standardised)
+  localStorage (EXCEPTION: theme preference only —
+                never for JWT or auth data)
+  Plain CSS    (use Tailwind utility classes only)
 
-OQ5 — Knowledge Base integration scope
-  Is ConnectX integrating with Sacumen's Knowledge Base in V1?
-  If yes: when a customer raises a connector request, does it auto-link to
-  Knowledge Base data and SacuNXT?
-  Action: Confirm with Suthan.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.2 THEME SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-OQ6 — Hosting & Infrastructure
-  Which cloud provider? AWS / GCP / Azure / On-Premise?
-  Action: Confirm with manager.
+ConnectX supports Light and Dark themes 
+across ALL modules.
 
-OQ7 — Connector credentials security
-  How are customer API keys/credentials stored?
-  A secrets manager is required before any credential storage is built.
-  Action: Confirm with Suthan.
+Theme is USER-CONTROLLED via toggle in TopBar.
+Default theme : Dark
+All modules   : Support both themes
 
-OQ8 — Support module — internal or external ticketing
-  Custom-built internal ticket system (recommended for V1) or wrapper
-  around Jira / ServiceNow?
-  Action: Confirm with manager.
+User preference saved in:
+  V1 → localStorage (theme preference ONLY)
+  V2 → saved to user profile in database
 
-OQ9 — Super Admin impersonation access level
-  While Super Admin is viewing a tenant (impersonating), should they have
-  READ ONLY access or FULL write access?
-  Current PRD default: READ ONLY (recommended for V1 safety).
-  Action: Confirm with manager.
+SIDEBAR RULE:
+  Sidebar background always stays dark
+  regardless of which theme user selects.
+  --bg-sidebar never changes between themes.
 
-================================================================================
-17. GLOSSARY
-================================================================================
+NOTE: Exact hex values to be confirmed 
+      at UI freeze (OQ4).
+      Use CSS variables — never hardcode 
+      hex in components.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.3 CSS VARIABLES (confirm hex at UI freeze)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Define once in: frontend/src/index.cs
+
+/* DARK THEME — default for most modules */
+.theme-dark {
+  --bg-page       : #0f1117;
+  --bg-card       : #1a1f2e;
+  --bg-sidebar    : #0d1117;
+  --border        : #1e293b;
+  --text-primary  : #ffffff;
+  --text-muted    : #94a3b8;
+  --brand-primary : #00B4D8;
+  --brand-hover   : #0099b8;
+  --success       : #10b981;
+  --warning       : #f59e0b;
+  --danger        : #ef4444;
+  --info          : #3b82f6;
+}
+
+/* LIGHT THEME — Integration Library only */
+.theme-light {
+  --bg-page       : #f8fafc;
+  --bg-card       : #ffffff;
+  --bg-sidebar    : #0d1117;  /* sidebar always dark */
+  --border        : #e2e8f0;
+  --text-primary  : #0f172a;
+  --text-muted    : #64748b;
+  --brand-primary : #00B4D8;  /* accent same in both */
+  --brand-hover   : #0099b8;
+  --success       : #10b981;
+  --warning       : #f59e0b;
+  --danger        : #ef4444;
+  --info          : #3b82f6;
+}
+
+/* PRIORITY COLORS — tickets, used across modules */
+--priority-p1   : #ef4444;   /* critical */
+--priority-p2   : #f59e0b;   /* high     */
+--priority-p3   : #3b82f6;   /* medium   */
+--priority-p4   : #94a3b8;   /* low      */
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.4 REACT QUERY STANDARDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+All API calls MUST use React Query hooks.
+Never call Axios directly in a component.
+
+Standard patterns:
+
+/* Fetching data (GET) */
+const { data, isLoading, error } = useQuery({
+  queryKey: ['tickets', tenantId, filters],
+  queryFn : () => api.get('/api/v1/support/tickets')
+})
+
+/* Mutating data (POST/PATCH/DELETE) */
+const mutation = useMutation({
+  mutationFn: (payload) => api.post('/api/v1/support/tickets', payload),
+  onSuccess : () => queryClient.invalidateQueries(['tickets'])
+})
+
+/* Auto-refresh (Monitor dashboard) */
+const { data } = useQuery({
+  queryKey     : ['monitor', tenantId],
+  queryFn      : () => api.get('/api/v1/monitor/health'),
+  refetchInterval: 30000   // refresh every 30 seconds
+})
+
+Query key naming convention:
+  ['module', tenantId]              → list
+  ['module', tenantId, id]          → single item
+  ['module', tenantId, filters]     → filtered list
+
+
+## 17. GLOSSARY
 
 Term              Definition
 ──────────────── ─────────────────────────────────────────────────────────────
@@ -886,7 +940,7 @@ CI/CD Gate        Automated check that blocks deployment if tests fail.
 Invite-only       No self-registration. Accounts created by invite only.
 bcrypt            Password hashing algorithm. All passwords hashed before storage.
 
-================================================================================
-END OF PRD-MAIN.txt
+
+## END OF PRD-MAIN.txt
 Version 1.1 — ConnectX — Sacumen — 2026-03-06
-================================================================================
+
