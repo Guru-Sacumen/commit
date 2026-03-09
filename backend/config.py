@@ -2,7 +2,7 @@
 import os
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 
 
 class Settings(BaseSettings):
@@ -33,12 +33,6 @@ class Settings(BaseSettings):
     # Application
     debug: bool = False
     log_level: str = "INFO"
-    cors_origins: list = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ]
 
 
 # Global settings instance
