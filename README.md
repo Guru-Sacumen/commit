@@ -99,9 +99,9 @@ connectx/
 2. Add your PRD file inside `/docs` folder
 3. Commit and push
 4. Raise a Pull Request on GitHub
-5. Tag **Prasanna** for review
+5. Tag reviewer for review
 6. Address review comments, push again
-7. Prasanna merges to `main` once approved
+7. Suthan/Prasanna merges to `main` once approved
 
 ---
 
