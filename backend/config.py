@@ -18,10 +18,6 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
     
-    # Redis
-    redis_url: str = "redis://localhost:6379/0"
-    redis_cache_ttl: int = 3600
-    
     # Email
     smtp_host: str = ""
     smtp_port: int = 587
@@ -43,10 +39,6 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173"
     ]
-    
-    # Celery
-    celery_broker_url: str = "redis://localhost:6379/0"
-    celery_result_backend: str = "redis://localhost:6379/0"
 
 
 # Global settings instance

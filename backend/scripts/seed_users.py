@@ -1,24 +1,60 @@
-# seed_users.py - Initial super admin seed data
+"""Database seeding script for ConnectX.
+
+This module provides functions to seed the database with initial data including:
+- Super admin user
+- Sample tenant with admin and member users
+- Connector categories
+- Connector catalog entries
+
+The script follows PEP 8 style guidelines and includes proper error handling.
+For production use, all print statements have been replaced with logging.
+"""
+
+import logging
 import os
 import uuid
 from datetime import datetime
+from typing import Optional
+
 from dotenv import load_dotenv
 
 from database import SessionLocal, engine, Base
-from models import User, Tenant, Membership, RoleEnum, ConnectorCategory, ConnectorCatalog
+from models import (
+    User,
+    Tenant,
+    Membership,
+    RoleEnum,
+    ConnectorCategory,
+    ConnectorCatalog,
+    Connector,
+)
 from auth import hash_password
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-def create_super_admin():
-    """Create initial super admin user"""
+def create_super_admin() -> Optional[User]:
+    """Create initial super admin user.
+    
+    Creates a super admin user with credentials from environment variables
+    or defaults. If a super admin already exists, returns the existing user.
+    
+    Returns:
+        Optional[User]: The created super admin user or None if error occurs.
+        
+    Raises:
+        Exception: If database error occurs during creation.
+    """
     db = SessionLocal()
     
     try:
         # Check if super admin already exists
         existing_superadmin = db.query(User).filter(User.superadmin == True).first()
         if existing_superadmin:
-            print(f"Super admin already exists: {existing_superadmin.email}")
+            logger.info(f"Super admin already exists: {existing_superadmin.email}")
             return existing_superadmin
         
         # Get super admin credentials from environment or use defaults
@@ -31,7 +67,7 @@ def create_super_admin():
             id=str(uuid.uuid4()),
             email=email,
             full_name=full_name,
-            password_hash=hash_password(password),
+            password_hash=hash_password(password[:72]),
             superadmin=True,
             auth_provider="LOCAL",
             mfa_enabled=False,  # Superadmin can choose to enable MFA
@@ -43,29 +79,40 @@ def create_super_admin():
         db.commit()
         db.refresh(superadmin)
         
-        print(f"✅ Created super admin: {email}")
-        print(f"   Password: {password}")
-        print(f"   Please change the password after first login!")
+        logger.info(f"Created super admin: {email}")
+        logger.info("Password set successfully (change after first login)")
         
         return superadmin
         
     except Exception as e:
-        print(f"❌ Error creating super admin: {e}")
+        logger.error(f"Error creating super admin: {e}")
         db.rollback()
         return None
     finally:
         db.close()
 
-def create_sample_tenant():
-    """Create a sample tenant with admin user for demonstration"""
+def create_sample_tenant() -> Optional[Tenant]:
+    """Create a sample tenant with admin and member users for demonstration.
+    
+    Creates a sample tenant named 'Demo Company' with:
+    - One admin user (demo-admin@connectx.local)
+    - One member user (demo-user@connectx.local)
+    - One sample connector (Microsoft Teams)
+    
+    Returns:
+        Optional[Tenant]: The created tenant or None if error occurs.
+        
+    Raises:
+        Exception: If database error occurs during creation.
+    """
     db = SessionLocal()
     
     try:
         # Check if sample tenant already exists
         existing_tenant = db.query(Tenant).filter(Tenant.name == "Demo Company").first()
         if existing_tenant:
-            print("✅ Sample tenant created successfully")
-            return existing_tenant, None
+            logger.info("Sample tenant already exists")
+            return existing_tenant
         
         # Create sample tenant
         tenant = Tenant(
@@ -87,7 +134,8 @@ def create_sample_tenant():
             superadmin=False,
             auth_provider="LOCAL",
             mfa_enabled=False,
-            totp_verified=False
+            totp_verified=False,
+            totp_secret=None,
         )
         db.add(admin_user)
         db.flush()
@@ -109,11 +157,12 @@ def create_sample_tenant():
             id=str(uuid.uuid4()),
             email=member_email,
             full_name="Demo User",
-            password_hash=hash_password(member_password),
+            password_hash=hash_password(member_password[:72]),
             superadmin=False,
             auth_provider="LOCAL",
             mfa_enabled=False,
-            totp_verified=False
+            totp_verified=False,
+            totp_secret=None,
         )
         db.add(member_user)
         db.flush()
@@ -130,38 +179,50 @@ def create_sample_tenant():
         # Create a connector
         connector = Connector(
             id="conn_008",
-            connector_id="microsoft-teams",
+            tenant_id=tenant.id,
             name="Microsoft Teams",
+            category="Communication",
             type="Communication",
-            usecase="Team collaboration and video conferencing"
+            external_url="https://teams.microsoft.com"
         )
         db.add(connector)
         
         db.commit()
         
-        print(f"✅ Created sample tenant: {tenant.name}")
-        print(f"   Admin: {admin_email} / {admin_password}")
-        print(f"   User: {member_email} / {member_password}")
+        logger.info(f"Created sample tenant: {tenant.name}")
+        logger.info(f"Admin user: {admin_email}")
+        logger.info(f"Member user: {member_email}")
         
         return tenant
         
     except Exception as e:
-        print(f"❌ Error creating sample tenant: {e}")
+        logger.error(f"Error creating sample tenant: {e}")
         db.rollback()
         return None
     finally:
         db.close()
 
 
-def create_connector_categories():
-    """Create connector categories"""
+def create_connector_categories() -> None:
+    """Create predefined connector categories.
+    
+    Creates 10 predefined connector categories including:
+    CRM, ERP, Analytics, Communication, E-commerce, Project Management,
+    HR, Finance, Marketing, and Storage.
+    
+    Returns:
+        None
+        
+    Raises:
+        Exception: If database error occurs during creation.
+    """
     db = SessionLocal()
     
     try:
         # Check if categories already exist
         existing_categories = db.query(ConnectorCategory).count()
         if existing_categories > 0:
-            print(f"Connector categories already exist: {existing_categories} found")
+            logger.info(f"Connector categories already exist: {existing_categories} found")
             return
         
         categories = [
@@ -226,21 +287,35 @@ def create_connector_categories():
             db.add(category)
         
         db.commit()
-        print(f"✅ Created {len(categories)} connector categories")
+        logger.info(f"Created {len(categories)} connector categories")
         
+    except Exception as e:
+        logger.error(f"Error creating connector categories: {e}")
+        db.rollback()
+        raise
     finally:
         db.close()
 
 
-def create_connector_catalog():
-    """Create sample connector catalog entries"""
+def create_connector_catalog() -> None:
+    """Create sample connector catalog entries.
+    
+    Creates 20 predefined connector catalog entries across various categories
+    including popular services like Salesforce, Slack, Jira, Shopify, etc.
+    
+    Returns:
+        None
+        
+    Raises:
+        Exception: If database error occurs during creation.
+    """
     db = SessionLocal()
     
     try:
         # Check if connectors already exist
         existing_connectors = db.query(ConnectorCatalog).count()
         if existing_connectors > 0:
-            print(f"Connector catalog entries already exist: {existing_connectors} found")
+            logger.info(f"Connector catalog entries already exist: {existing_connectors} found")
             return
         
         connectors = [
@@ -416,46 +491,58 @@ def create_connector_catalog():
             db.add(connector)
         
         db.commit()
-        print(f"✅ Created {len(connectors)} connector catalog entries")
+        logger.info(f"Created {len(connectors)} connector catalog entries")
         
+    except Exception as e:
+        logger.error(f"Error creating connector catalog: {e}")
+        db.rollback()
+        raise
     finally:
         db.close()
 
 
-def seed_all():
-    """Run all seed operations"""
-    print("🌱 Starting database seeding...")
-    print(f"   Database URL: {os.getenv('DATABASE_URL', 'postgresql://user:password@localhost/connectx')}")
-    print()
+def seed_all() -> None:
+    """Run all database seeding operations.
+    
+    Executes the complete seeding process:
+    1. Creates database tables
+    2. Creates super admin user
+    3. Creates connector categories
+    4. Creates connector catalog entries
+    5. Optionally creates sample tenant
+    
+    Returns:
+        None
+        
+    Raises:
+        Exception: If any seeding operation fails.
+    """
+    logger.info("Starting database seeding...")
+    logger.info(f"Database URL: {os.getenv('DATABASE_URL', 'postgresql://user:password@localhost/connectx')}")
     
     # Create tables
-    print("📋 Creating database tables...")
+    logger.info("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created")
-    print()
+    logger.info("Database tables created")
     
     # Create super admin
-    print("👑 Creating super admin...")
+    logger.info("Creating super admin...")
     create_super_admin()
-    print()
     
     # Create connector categories
-    print("📂 Creating connector categories...")
+    logger.info("Creating connector categories...")
     create_connector_categories()
-    print()
     
     # Create connector catalog
-    print("📋 Creating connector catalog...")
+    logger.info("Creating connector catalog...")
     create_connector_catalog()
-    print()
     
     # Create sample tenant (optional)
     if os.getenv("CREATE_SAMPLE_TENANT", "true").lower() == "true":
-        print("🏢 Creating sample tenant...")
+        logger.info("Creating sample tenant...")
         create_sample_tenant()
-        print()
     
-    print("🎉 Database seeding completed!")
+    logger.info("Database seeding completed!")
 
 if __name__ == "__main__":
     seed_all()

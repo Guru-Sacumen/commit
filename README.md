@@ -41,14 +41,29 @@ cd ConnectX
 ### 2. Backend setup
 ```bash
 cd backend
+
+# Step 1: Create and activate virtual environment
 python -m venv venv
 # Linux / Mac
 source venv/bin/activate
 # Windows
 venv\Scripts\activate
+
+# Step 2: Install dependencies
 pip install -r requirements.txt
-cp .env.example .env            # fill in your local DB credentials
+
+# Step 3: Configure environment
+cp .env.example .env            # fill in your local PostgreSQL credentials
+# Edit .env file with your database settings:
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/connectx
+
+# Step 4: Run database migrations
 alembic upgrade head            # run migrations
+
+# Step 5: Seed initial data (optional)
+PYTHONPATH=. python scripts/seed_users.py
+
+# Step 6: Start the server
 uvicorn main:app --reload       # starts on http://localhost:8000
 ```
 

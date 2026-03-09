@@ -120,7 +120,7 @@ def _ensure_runtime_schema() -> None:
                             )
                         )
                     except Exception as inner_exc:
-                        # some databases (sqlite) complain about DEFAULT on ALTER; retry without default
+                        # Retry without DEFAULT if ALTER fails
                         if "DEFAULT" in col_def:
                             minimal = col_def.split("DEFAULT")[0].strip()
                             conn.execute(
@@ -151,7 +151,7 @@ _ensure_runtime_schema()
 # with a database constraint/partial index.  During startup we check for
 # any existing violations so that the index creation doesn't silently
 # drop data or fail in a confusing way.
-if engine.dialect.name in {"postgresql", "sqlite"}:
+if engine.dialect.name == "postgresql":
     try:
         with engine.begin() as conn:
             # Drop the single admin constraint to allow multiple admins
