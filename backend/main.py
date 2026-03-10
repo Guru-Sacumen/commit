@@ -60,6 +60,7 @@ from modules.testing import router as testing_router
 from modules.monitor import router as monitor_router
 from modules.support import router as support_router
 from modules.users import router as users_router
+from auth import auth_router
 
 # setup database
 Base.metadata.create_all(bind=engine)
@@ -87,8 +88,15 @@ def _ensure_runtime_schema() -> None:
         "auth_provider": "VARCHAR NOT NULL DEFAULT 'LOCAL'",
         "google_subject": "VARCHAR",
         "mfa_enabled": "BOOLEAN NOT NULL DEFAULT FALSE",
+        "mfa_secret": "VARCHAR",
         "totp_secret": "VARCHAR",
         "totp_verified": "BOOLEAN NOT NULL DEFAULT FALSE",
+        "tenant_id": "VARCHAR REFERENCES tenants(id)",
+    }
+    
+    # additions for tenant fields
+    tenant_additions = {
+        "domain": "VARCHAR UNIQUE",
     }
 
     try:
@@ -141,6 +149,44 @@ def _ensure_runtime_schema() -> None:
                         )
                     except Exception:
                         pass
+            
+            # ensure tenant columns exist
+            if "tenants" in table_names:
+                existing_cols = {column["name"] for column in inspector.get_columns("tenants")}
+                for col_name, col_def in tenant_additions.items():
+                    if col_name in existing_cols:
+                        continue
+                    try:
+                        conn.execute(
+                            text(f"ALTER TABLE tenants ADD COLUMN {col_name} {col_def}")
+                        )
+                    except Exception:
+                        pass
+            
+            # create refresh_tokens table if not exists
+            if "refresh_tokens" not in table_names:
+                conn.execute(
+                    text("""
+                        CREATE TABLE IF NOT EXISTS refresh_tokens (
+                            id VARCHAR PRIMARY KEY,
+                            user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                            token VARCHAR UNIQUE NOT NULL,
+                            expires_at TIMESTAMP NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            revoked BOOLEAN NOT NULL DEFAULT FALSE,
+                            replaced_by VARCHAR
+                        )
+                    """)
+                )
+                conn.execute(
+                    text("CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens(user_id)")
+                )
+                conn.execute(
+                    text("CREATE INDEX IF NOT EXISTS ix_refresh_tokens_token ON refresh_tokens(token)")
+                )
+                conn.execute(
+                    text("CREATE INDEX IF NOT EXISTS ix_refresh_tokens_expires_at ON refresh_tokens(expires_at)")
+                )
     except Exception as exc:
         print(f"[schema] runtime schema update skipped: {exc}")
 
@@ -455,9 +501,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     role = membership.role if membership else RoleEnum.MEMBER
     if user.superadmin:
         role = RoleEnum.SUPERADMIN
-
     access_token = create_access_token(
-        data={"sub": user.id, "tenant_id": tenant_id, "role": role}
+        user_id=user.id,
+        tenant_id=tenant_id,
+        role=str(role.value) if hasattr(role, 'value') else str(role)
     )
     print(f"User {user.email} logged in, tenant_id={tenant_id}, role={role}")
     return Token(access_token=access_token)
@@ -508,7 +555,9 @@ def google_login(payload: GoogleLogin, db: Session = Depends(get_db)):
     if user.superadmin:
         role = RoleEnum.SUPERADMIN
     access_token = create_access_token(
-        data={"sub": user.id, "tenant_id": tenant_id, "role": role}
+        user_id=user.id,
+        tenant_id=tenant_id,
+        role=str(role.value) if hasattr(role, 'value') else str(role)
     )
     return Token(access_token=access_token)
 
@@ -642,7 +691,9 @@ def login_with_totop(
         role = RoleEnum.SUPERADMIN
 
     access_token = create_access_token(
-        data={"sub": user.id, "tenant_id": tenant_id, "role": role}
+        user_id=user.id,
+        tenant_id=tenant_id,
+        role=str(role.value) if hasattr(role, 'value') else str(role)
     )
     print(f"User {user.email} logged in, tenant_id={tenant_id}, role={role}")
     return Token(access_token=access_token)
@@ -687,6 +738,7 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     return {"ok": True}
 
 # Include all module routers
+app.include_router(auth_router)
 app.include_router(router)
 app.include_router(superadmin_router)
 app.include_router(integration_router)

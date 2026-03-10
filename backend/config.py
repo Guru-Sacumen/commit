@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://user:password@localhost:5432/connectx"
     
     # JWT
-    jwt_secret: str = "dev-connectx-secret"
+    jwt_secret: str = "dev_connectx_jwt_secret_xK9#mP2@vL8$nQ5"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
     

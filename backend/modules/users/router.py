@@ -19,6 +19,8 @@ def _resolve_role(user: User, db: Session) -> RoleEnum:
 
 @router.get("/me", response_model=UserOut)
 def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # # Refresh user object to ensure latest data
+    # user = db.query(User).filter(User.id == user.id).first()
     role = _resolve_role(user, db)
     return UserOut(
         id=user.id,
@@ -28,6 +30,7 @@ def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)
         role=role,
         superadmin=user.superadmin,
         auth_provider=user.auth_provider,
+        tenant_id=user.tenant_id,
         google_subject=user.google_subject,
         mfa_enabled=user.mfa_enabled,
         totp_verified=user.totp_verified,

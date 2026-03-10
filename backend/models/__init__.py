@@ -1,6 +1,6 @@
 # models/__init__.py - Shared SQLAlchemy database models
 from .base import Base, RoleEnum, ConnectorRequestStatus
-from .user import User, PasswordReset
+from .user import User, PasswordReset, RefreshToken
 from .tenant import Tenant, Membership
 from .connector import (
     Connector, 
@@ -17,6 +17,7 @@ __all__ = [
     "ConnectorRequestStatus",
     "User",
     "PasswordReset",
+    "RefreshToken",
     "Tenant",
     "Membership",
     "Connector",

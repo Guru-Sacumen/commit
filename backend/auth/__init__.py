@@ -5,21 +5,55 @@ from .dependencies import (
     get_current_admin,
     get_current_tenant_member,
     get_current_superadmin,
+    get_token,
 )
-from .jwt_handler import create_access_token
+from .jwt_handler import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    verify_token,
+    set_auth_cookies,
+    clear_auth_cookies,
+    get_token_from_cookie,
+    get_refresh_token_from_cookie,
+    hash_refresh_token,
+    get_refresh_token_expiry,
+)
 from .rbac import check_permission
+from .services import AuthService, UserService, TenantService
+from .mfa_service import MFAService
+from .router import router as auth_router
 
-# Password handling functions
+# Password handling functions - use AuthService for new code
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
+    """
+    Hash a password using bcrypt.
+    
+    Args:
+        password: Plain text password
+    
+    Returns:
+        Bcrypt hashed password string
+    """
     return pwd_context.hash(password)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    """
+    Verify a password against its hash.
+    
+    Args:
+        plain: Plain text password
+        hashed: Bcrypt hashed password
+    
+    Returns:
+        True if password matches
+    """
     return pwd_context.verify(plain, hashed)
 
 

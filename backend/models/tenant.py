@@ -6,10 +6,20 @@ from models.base import Base, RoleEnum
 
 
 class Tenant(Base):
+    """
+    Tenant model for multi-tenant SaaS platform.
+    
+    Attributes:
+        id: UUID primary key
+        name: Unique tenant name
+        domain: Optional domain for tenant identification
+        created_at: Timestamp of creation
+    """
     __tablename__ = "tenants"
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True, nullable=False)
+    domain = Column(String, unique=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     members = relationship("Membership", back_populates="tenant")

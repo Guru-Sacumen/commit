@@ -49,6 +49,7 @@ class UserOut(UserBase):
     superadmin: bool = False
     auth_provider: str
     google_subject: Optional[str] = None
+    tenant_id: Optional[str] = None
     mfa_enabled: bool
     totp_verified: bool = False
 

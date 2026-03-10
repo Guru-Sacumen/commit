@@ -56,6 +56,7 @@ pip install -r requirements.txt
 cp .env.example .env            # fill in your local PostgreSQL credentials
 # Edit .env file with your database settings:
 # DATABASE_URL=postgresql://postgres:postgres@localhost:5432/connectx
+# JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
 # Step 4: Run database migrations
 alembic upgrade head            # run migrations
@@ -67,6 +68,22 @@ PYTHONPATH=. python seed_users.py
 uvicorn main:app --reload       # starts on http://localhost:8000
 ```
 
+> **JWT Authentication**: The backend now includes production-ready JWT authentication with:
+> - httpOnly cookie-based tokens (15 min access, 7 day refresh)
+> - Multi-tenant support with tenant_id in JWT payload
+> - MFA (TOTP) support for enhanced security
+> - Super admin impersonation capabilities
+> - Token rotation and revocation for security
+> 
+> **API Endpoints**:
+> - `/api/v1/auth/login` - Login with email/password
+> - `/api/v1/auth/refresh` - Refresh access token
+> - `/api/v1/auth/logout` - Logout and revoke tokens
+> - `/api/v1/users/me` - Get current user info
+> - `/api/v1/tenants/onboard` - Create new tenant with admin
+> - `/api/v1/auth/mfa/setup` - Setup MFA (TOTP)
+> - `/api/v1/admin/impersonate` - Super admin impersonation
+> 
 > API docs available at **http://localhost:8000/docs** (Swagger UI) once backend is running.
 
 ### 3. Frontend setup

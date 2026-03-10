@@ -1,17 +1,24 @@
 # auth/dependencies.py - FastAPI authentication dependencies
-from fastapi import Depends, HTTPException, status
+from typing import Optional
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import User, Membership, RoleEnum
-from auth.jwt_handler import decode_token
+from auth.jwt_handler import decode_token, get_token_from_cookie
 from auth.rbac import check_permission
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 def get_db():
-    """Database dependency"""
+    """
+    Database dependency that provides a SQLAlchemy session.
+    
+    Yields:
+        Session: Database session
+    """
     db = SessionLocal()
     try:
         yield db
@@ -19,11 +26,56 @@ def get_db():
         db.close()
 
 
+def get_token(
+    request: Request,
+    bearer_token: Optional[str] = Depends(oauth2_scheme),
+) -> str:
+    """
+    Extract JWT token from httpOnly cookie or Authorization header.
+    Cookie takes precedence for security.
+    
+    Args:
+        request: FastAPI Request object
+        bearer_token: Optional Bearer token from header
+    
+    Returns:
+        JWT token string
+    
+    Raises:
+        HTTPException: 401 if no token found
+    """
+    cookie_token = get_token_from_cookie(request)
+    
+    if cookie_token:
+        return cookie_token
+    
+    if bearer_token:
+        return bearer_token
+    
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(get_token),
     db: Session = Depends(get_db),
 ) -> User:
-    """Get current authenticated user from JWT token"""
+    """
+    Get current authenticated user from JWT token.
+    
+    Args:
+        token: JWT token from cookie or header
+        db: Database session
+    
+    Returns:
+        Authenticated User instance
+    
+    Raises:
+        HTTPException: 401 if token invalid or user not found
+    """
     cred_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
