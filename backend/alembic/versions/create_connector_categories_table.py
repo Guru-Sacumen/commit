@@ -1,6 +1,6 @@
 """Create connector_categories table
 
-Revision ID: create_connector_categories_table
+Revision ID: conn_categories
 Revises: add_usecase_to_connector_catalog
 Create Date: 2026-03-08 08:40:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'create_connector_categories_table'
+revision = 'conn_categories'
 down_revision = 'add_usecase_to_connector_catalog'
 branch_labels = None
 depends_on = None

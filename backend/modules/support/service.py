@@ -1,207 +1,678 @@
 # modules/support/service.py - Support module service layer
 from sqlalchemy.orm import Session
-from typing import List, Dict, Optional
-from datetime import datetime
+from sqlalchemy import and_, or_
+from typing import List, Dict, Optional, Tuple
+from datetime import datetime, timedelta
+from fastapi import HTTPException, BackgroundTasks
 import uuid
+import difflib
+
+from models.ticket import Ticket, TicketComment, TicketAttachment, PriorityEnum, StatusEnum, VisibilityEnum
+from models.escalation import EscalationLog
+from models.audit import AuditEvent, EmailNotification, EmailStatusEnum
+from models import User
+from modules.support.schemas import (
+    TicketCreate, TicketUpdate, TicketResponse, TicketCreateResponse,
+    DuplicateTicketInfo, TicketPreviewRequest, TicketPreviewResponse,
+    PreviewData, ValidationError as SchemaValidationError, ModuleEnum
+)
 
 
-class SupportService:
-    """Service for managing support tickets and knowledge base"""
+class TicketService:
+    """Service for ticket CRUD operations"""
     
     def __init__(self, db: Session):
         self.db = db
     
-    def get_tenant_tickets(self, tenant_id: str, status: Optional[str] = None,
-                          priority: Optional[str] = None, limit: int = 50) -> List[Dict]:
-        """Get support tickets for a tenant"""
-        # Placeholder implementation
-        tickets = [
-            {
-                "id": "ticket_1",
-                "tenant_id": tenant_id,
-                "title": "Salesforce connector authentication issue",
-                "description": "Unable to authenticate with Salesforce using API keys",
-                "status": "open",
-                "priority": "high",
-                "category": "authentication",
-                "created_by": "user_123",
-                "assigned_to": "support_agent_1",
-                "created_at": datetime.utcnow() - timedelta(hours=4),
-                "updated_at": datetime.utcnow() - timedelta(hours=2),
-                "comments_count": 3
-            },
-            {
-                "id": "ticket_2",
-                "tenant_id": tenant_id,
-                "title": "Data sync delay with Slack",
-                "description": "Slack messages are taking too long to sync",
-                "status": "in_progress",
-                "priority": "medium",
-                "category": "performance",
-                "created_by": "user_456",
-                "assigned_to": "support_agent_2",
-                "created_at": datetime.utcnow() - timedelta(days=1),
-                "updated_at": datetime.utcnow() - timedelta(hours=6),
-                "comments_count": 5
-            },
-            {
-                "id": "ticket_3",
-                "tenant_id": tenant_id,
-                "title": "Feature request: Custom field mapping",
-                "description": "Need ability to map custom fields between systems",
-                "status": "closed",
-                "priority": "low",
-                "category": "feature_request",
-                "created_by": "user_789",
-                "assigned_to": None,
-                "created_at": datetime.utcnow() - timedelta(days=3),
-                "updated_at": datetime.utcnow() - timedelta(days=2),
-                "comments_count": 2
-            }
-        ]
+    def create_ticket(
+        self,
+        ticket_data: TicketCreate,
+        tenant_id: str,
+        user_id: str,
+        background_tasks: BackgroundTasks
+    ) -> TicketCreateResponse:
+        """Create ticket with deduplication check, audit logging, email notification"""
         
-        # Filter by status and priority
-        if status:
-            tickets = [t for t in tickets if t["status"] == status]
-        if priority:
-            tickets = [t for t in tickets if t["priority"] == priority]
+        # Check for duplicates
+        dedup_service = DeduplicationService(self.db)
+        existing_ticket = dedup_service.check_duplicate(
+            ticket_data=ticket_data,
+            tenant_id=tenant_id,
+            user_id=user_id
+        )
         
-        return tickets[:limit]
+        if existing_ticket:
+            return TicketCreateResponse(
+                is_duplicate=True,
+                existing_ticket_id=existing_ticket.id,
+                existing_ticket=DuplicateTicketInfo(
+                    id=existing_ticket.id,
+                    title=existing_ticket.title,
+                    status=existing_ticket.status,
+                    created_at=existing_ticket.created_at,
+                    url=f"/support/tickets/{existing_ticket.id}"
+                ),
+                message="A ticket already exists for this resource."
+            )
+        
+        # Create new ticket
+        ticket = Ticket(
+            id=str(uuid.uuid4()),
+            tenant_id=tenant_id,
+            title=ticket_data.title,
+            description=ticket_data.description,
+            priority=ticket_data.priority,
+            status=StatusEnum.TODO,
+            module_reference=ticket_data.module_reference.dict() if ticket_data.module_reference else None,
+            created_by=user_id,
+            assigned_to=None,
+            reopened_count=0,
+            reopened_at=None
+        )
+        
+        self.db.add(ticket)
+        self.db.commit()
+        self.db.refresh(ticket)
+        
+        # Audit log
+        audit_service = AuditService(self.db)
+        audit_service.log_event(
+            entity_type="ticket",
+            entity_id=ticket.id,
+            action="created",
+            actor_id=user_id,
+            tenant_id=tenant_id,
+            metadata={"title": ticket.title, "priority": ticket.priority.value}
+        )
+        
+        # Send email notification
+        notification_service = NotificationService(self.db)
+        background_tasks.add_task(
+            notification_service.send_ticket_created_email,
+            ticket_id=ticket.id,
+            tenant_id=tenant_id
+        )
+        
+        return TicketCreateResponse(
+            is_duplicate=False,
+            ticket_id=ticket.id,
+            ticket=TicketResponse.model_validate(ticket),
+            message="Ticket created successfully."
+        )
     
-    def create_ticket(self, tenant_id: str, ticket_data: dict, user_id: str) -> Dict:
-        """Create a new support ticket"""
-        ticket_id = str(uuid.uuid4())
+    def get_tickets(
+        self,
+        tenant_id: str,
+        status: Optional[StatusEnum] = None,
+        priority: Optional[PriorityEnum] = None,
+        module: Optional[ModuleEnum] = None,
+        assigned_to: Optional[str] = None,
+        created_by: Optional[str] = None,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        page: int = 1,
+        page_size: int = 50
+    ) -> Tuple[List[Ticket], int]:
+        """List tickets with filters, pagination, tenant scoping"""
         
-        ticket = {
-            "id": ticket_id,
-            "tenant_id": tenant_id,
-            "title": ticket_data.get("title"),
-            "description": ticket_data.get("description"),
-            "status": "open",
-            "priority": ticket_data.get("priority", "medium"),
-            "category": ticket_data.get("category", "general"),
-            "created_by": user_id,
-            "assigned_to": None,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "comments_count": 0
-        }
+        query = self.db.query(Ticket).filter(Ticket.tenant_id == tenant_id)
         
-        # In real implementation, would save to database
+        if status:
+            query = query.filter(Ticket.status == status)
+        if priority:
+            query = query.filter(Ticket.priority == priority)
+        if assigned_to:
+            query = query.filter(Ticket.assigned_to == assigned_to)
+        if created_by:
+            query = query.filter(Ticket.created_by == created_by)
+        if date_from:
+            query = query.filter(Ticket.created_at >= date_from)
+        if date_to:
+            query = query.filter(Ticket.created_at <= date_to)
+        if module:
+            query = query.filter(Ticket.module_reference['module'].astext == module.value)
+        
+        total = query.count()
+        tickets = query.order_by(Ticket.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        
+        return tickets, total
+    
+    def get_ticket(self, ticket_id: str, tenant_id: str, user_id: str) -> Ticket:
+        """Get single ticket with ownership/tenant validation"""
+        
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        
+        if ticket.tenant_id != tenant_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
         return ticket
     
-    def get_ticket(self, ticket_id: str) -> Optional[Dict]:
-        """Get a specific support ticket"""
-        # Placeholder implementation
-        return {
-            "id": ticket_id,
-            "tenant_id": "tenant_1",
-            "title": "Salesforce connector authentication issue",
-            "description": "Unable to authenticate with Salesforce using API keys. Getting 401 errors.",
-            "status": "open",
-            "priority": "high",
-            "category": "authentication",
-            "created_by": "user_123",
-            "assigned_to": "support_agent_1",
-            "created_at": datetime.utcnow() - timedelta(hours=4),
-            "updated_at": datetime.utcnow() - timedelta(hours=2),
-            "comments": [
-                {
-                    "id": "comment_1",
-                    "ticket_id": ticket_id,
-                    "author": "user_123",
-                    "content": "We're getting 401 errors when trying to connect to Salesforce.",
-                    "created_at": datetime.utcnow() - timedelta(hours=4),
-                    "is_internal": False
-                },
-                {
-                    "id": "comment_2",
-                    "ticket_id": ticket_id,
-                    "author": "support_agent_1",
-                    "content": "Can you please verify your API credentials and permissions?",
-                    "created_at": datetime.utcnow() - timedelta(hours=3),
-                    "is_internal": False
-                }
-            ]
-        }
+    def update_ticket(
+        self,
+        ticket_id: str,
+        ticket_data: TicketUpdate,
+        tenant_id: str,
+        user_id: str,
+        is_superadmin: bool
+    ) -> Ticket:
+        """Update ticket with RBAC-enforced field updates"""
+        
+        ticket = self.get_ticket(ticket_id, tenant_id, user_id)
+        
+        updated_fields = []
+        
+        if ticket_data.title is not None:
+            ticket.title = ticket_data.title
+            updated_fields.append("title")
+        
+        if ticket_data.description is not None:
+            ticket.description = ticket_data.description
+            updated_fields.append("description")
+        
+        if ticket_data.priority is not None:
+            if not is_superadmin:
+                raise HTTPException(status_code=403, detail="Only Super Admin can change priority")
+            ticket.priority = ticket_data.priority
+            updated_fields.append("priority")
+        
+        ticket.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        self.db.refresh(ticket)
+        
+        if updated_fields:
+            audit_service = AuditService(self.db)
+            audit_service.log_event(
+                entity_type="ticket",
+                entity_id=ticket.id,
+                action="updated",
+                actor_id=user_id,
+                tenant_id=tenant_id,
+                metadata={"updated_fields": updated_fields}
+            )
+        
+        return ticket
     
-    def update_ticket(self, ticket_id: str, update_data: dict, user_id: str) -> Dict:
-        """Update a support ticket"""
-        # Placeholder implementation
-        return {
-            "ok": True,
-            "ticket_id": ticket_id,
-            "updated_fields": list(update_data.keys()),
-            "updated_at": datetime.utcnow()
-        }
+    def assign_ticket(
+        self,
+        ticket_id: str,
+        assignee_id: str,
+        tenant_id: str,
+        user_id: str,
+        background_tasks: BackgroundTasks
+    ) -> Ticket:
+        """Assign ticket (Super Admin only)"""
+        
+        ticket = self.get_ticket(ticket_id, tenant_id, user_id)
+        
+        old_assignee = ticket.assigned_to
+        ticket.assigned_to = assignee_id
+        ticket.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        self.db.refresh(ticket)
+        
+        # Audit log
+        audit_service = AuditService(self.db)
+        audit_service.log_event(
+            entity_type="ticket",
+            entity_id=ticket.id,
+            action="assigned",
+            actor_id=user_id,
+            tenant_id=tenant_id,
+            metadata={"from": old_assignee, "to": assignee_id}
+        )
+        
+        # Send email
+        notification_service = NotificationService(self.db)
+        background_tasks.add_task(
+            notification_service.send_assignment_email,
+            ticket_id=ticket.id,
+            assignee_id=assignee_id,
+            tenant_id=tenant_id
+        )
+        
+        return ticket
     
-    def add_ticket_comment(self, ticket_id: str, comment_data: dict, user_id: str) -> Dict:
-        """Add a comment to a support ticket"""
-        comment_id = str(uuid.uuid4())
+    def change_status(
+        self,
+        ticket_id: str,
+        new_status: StatusEnum,
+        tenant_id: str,
+        user_id: str,
+        background_tasks: BackgroundTasks
+    ) -> Ticket:
+        """Change ticket status (Super Admin only)"""
         
-        comment = {
-            "id": comment_id,
-            "ticket_id": ticket_id,
-            "author": user_id,
-            "content": comment_data.get("content"),
-            "is_internal": comment_data.get("is_internal", False),
-            "created_at": datetime.utcnow()
+        ticket = self.get_ticket(ticket_id, tenant_id, user_id)
+        
+        old_status = ticket.status
+        ticket.status = new_status
+        ticket.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        self.db.refresh(ticket)
+        
+        # Audit log
+        audit_service = AuditService(self.db)
+        audit_service.log_event(
+            entity_type="ticket",
+            entity_id=ticket.id,
+            action="status_changed",
+            actor_id=user_id,
+            tenant_id=tenant_id,
+            metadata={"from": old_status.value, "to": new_status.value}
+        )
+        
+        # Send email
+        notification_service = NotificationService(self.db)
+        background_tasks.add_task(
+            notification_service.send_status_changed_email,
+            ticket_id=ticket.id,
+            old_status=old_status.value,
+            new_status=new_status.value,
+            tenant_id=tenant_id
+        )
+        
+        return ticket
+    
+    def reopen_ticket(
+        self,
+        ticket_id: str,
+        tenant_id: str,
+        user_id: str,
+        background_tasks: BackgroundTasks
+    ) -> Ticket:
+        """Reopen ticket (Super Admin only)"""
+        
+        ticket = self.get_ticket(ticket_id, tenant_id, user_id)
+        
+        if ticket.status != StatusEnum.CLOSED:
+            raise HTTPException(status_code=400, detail="Only closed tickets can be reopened")
+        
+        ticket.status = StatusEnum.TODO
+        ticket.reopened_count += 1
+        ticket.reopened_at = datetime.utcnow()
+        ticket.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        self.db.refresh(ticket)
+        
+        # Audit log
+        audit_service = AuditService(self.db)
+        audit_service.log_event(
+            entity_type="ticket",
+            entity_id=ticket.id,
+            action="reopened",
+            actor_id=user_id,
+            tenant_id=tenant_id,
+            metadata={"reopened_count": ticket.reopened_count}
+        )
+        
+        # Send email
+        notification_service = NotificationService(self.db)
+        background_tasks.add_task(
+            notification_service.send_reopened_email,
+            ticket_id=ticket.id,
+            tenant_id=tenant_id
+        )
+        
+        return ticket
+    
+    def delete_ticket(
+        self,
+        ticket_id: str,
+        tenant_id: str,
+        user_id: str
+    ) -> None:
+        """Delete ticket (Super Admin only) - hard delete with audit"""
+        
+        ticket = self.get_ticket(ticket_id, tenant_id, user_id)
+        
+        # Audit log before deletion
+        audit_service = AuditService(self.db)
+        audit_service.log_event(
+            entity_type="ticket",
+            entity_id=ticket.id,
+            action="deleted",
+            actor_id=user_id,
+            tenant_id=tenant_id,
+            metadata={"title": ticket.title}
+        )
+        
+        self.db.delete(ticket)
+        self.db.commit()
+
+
+class DeduplicationService:
+    """Service for duplicate ticket detection"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def check_duplicate(
+        self,
+        ticket_data: TicketCreate,
+        tenant_id: str,
+        user_id: str
+    ) -> Optional[Ticket]:
+        """Check for duplicate tickets"""
+        
+        # Automatic tickets: exact match on module_reference
+        if ticket_data.module_reference:
+            return self._check_automatic_duplicate(ticket_data, tenant_id)
+        
+        # Manual tickets: fuzzy title match
+        return self._check_manual_duplicate(ticket_data, tenant_id, user_id)
+    
+    def _check_automatic_duplicate(
+        self,
+        ticket_data: TicketCreate,
+        tenant_id: str
+    ) -> Optional[Ticket]:
+        """Check duplicate for automatic tickets"""
+        
+        module_ref = ticket_data.module_reference
+        
+        existing = self.db.query(Ticket).filter(
+            and_(
+                Ticket.tenant_id == tenant_id,
+                Ticket.module_reference['module'].astext == module_ref.module.value,
+                Ticket.module_reference['resource_type'].astext == module_ref.resource_type,
+                Ticket.module_reference['resource_id'].astext == module_ref.resource_id,
+                Ticket.status.in_([StatusEnum.TODO, StatusEnum.IN_PROGRESS, StatusEnum.RESOLVED])
+            )
+        ).first()
+        
+        return existing
+    
+    def _check_manual_duplicate(
+        self,
+        ticket_data: TicketCreate,
+        tenant_id: str,
+        user_id: str
+    ) -> Optional[Ticket]:
+        """Check duplicate for manual tickets using fuzzy title match"""
+        
+        # Get recent tickets by same user (within 7 days)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        
+        recent_tickets = self.db.query(Ticket).filter(
+            and_(
+                Ticket.tenant_id == tenant_id,
+                Ticket.created_by == user_id,
+                Ticket.created_at >= seven_days_ago,
+                Ticket.module_reference.is_(None)
+            )
+        ).all()
+        
+        # Fuzzy match on title (85%+ similarity)
+        for ticket in recent_tickets:
+            similarity = difflib.SequenceMatcher(None, ticket_data.title.lower(), ticket.title.lower()).ratio()
+            if similarity >= 0.85:
+                return ticket
+        
+        return None
+
+
+class TicketPreviewService:
+    """Service for ticket preview and validation"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def preview_ticket(self, preview_data: TicketPreviewRequest) -> TicketPreviewResponse:
+        """Validate payload and generate formatted preview"""
+        
+        validation_errors = []
+        
+        # Validate title
+        if len(preview_data.title) < 1:
+            validation_errors.append(SchemaValidationError(
+                field="title",
+                message="Title cannot be empty"
+            ))
+        
+        # Validate description
+        if len(preview_data.description) < 1:
+            validation_errors.append(SchemaValidationError(
+                field="description",
+                message="Description cannot be empty"
+            ))
+        
+        if validation_errors:
+            return TicketPreviewResponse(
+                preview=None,
+                validation_errors=validation_errors,
+                is_valid=False
+            )
+        
+        # Generate preview
+        preview = PreviewData(
+            title=preview_data.title,
+            module=preview_data.module_reference.module.value if preview_data.module_reference else None,
+            priority=preview_data.priority,
+            description=preview_data.description,
+            metadata=preview_data.metadata,
+            attachments=[]
+        )
+        
+        return TicketPreviewResponse(
+            preview=preview,
+            validation_errors=[],
+            is_valid=True
+        )
+
+
+class IntegrationService:
+    """Service for module reference validation"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def validate_module_reference(
+        self,
+        module: ModuleEnum,
+        resource_type: str,
+        resource_id: str,
+        tenant_id: str
+    ) -> bool:
+        """Check resource exists in source module, prevent cross-tenant leaks"""
+        
+        # In real implementation, would query the respective module tables
+        # For now, return True as placeholder
+        return True
+    
+    def get_module_resource_url(
+        self,
+        module: ModuleEnum,
+        resource_type: str,
+        resource_id: str
+    ) -> str:
+        """Generate frontend URL for module resource"""
+        
+        url_map = {
+            ModuleEnum.INTEGRATION_LIBRARY: f"/integration/{resource_type}/{resource_id}",
+            ModuleEnum.LAB: f"/lab/{resource_type}/{resource_id}",
+            ModuleEnum.AUTOMATED_TESTING: f"/testing/{resource_type}/{resource_id}",
+            ModuleEnum.AGENTIC_MONITOR: f"/monitor/{resource_type}/{resource_id}"
         }
         
-        return comment
+        return url_map.get(module, f"/{module.value}/{resource_id}")
+
+
+class NotificationService:
+    """Service for email notifications"""
     
-    def get_knowledge_base_articles(self, category: Optional[str] = None, 
-                                  search: Optional[str] = None) -> List[Dict]:
-        """Get knowledge base articles"""
-        # Placeholder implementation
-        articles = [
-            {
-                "id": "kb_1",
-                "title": "Troubleshooting Salesforce Authentication",
-                "category": "authentication",
-                "summary": "Common issues and solutions for Salesforce authentication problems",
-                "content": "Detailed guide on resolving Salesforce authentication issues...",
-                "tags": ["salesforce", "authentication", "api"],
-                "created_at": datetime.utcnow() - timedelta(days=30),
-                "updated_at": datetime.utcnow() - timedelta(days=5),
-                "views": 245
-            },
-            {
-                "id": "kb_2",
-                "title": "Optimizing Connector Performance",
-                "category": "performance",
-                "summary": "Tips and best practices for improving connector performance",
-                "content": "Guide on optimizing connector performance and reducing latency...",
-                "tags": ["performance", "optimization", "connectors"],
-                "created_at": datetime.utcnow() - timedelta(days=20),
-                "updated_at": datetime.utcnow() - timedelta(days=2),
-                "views": 189
-            },
-            {
-                "id": "kb_3",
-                "title": "Data Sync Best Practices",
-                "category": "data_sync",
-                "summary": "Best practices for setting up and managing data synchronization",
-                "content": "Comprehensive guide on data sync configuration and management...",
-                "tags": ["data", "sync", "best_practices"],
-                "created_at": datetime.utcnow() - timedelta(days=15),
-                "updated_at": datetime.utcnow() - timedelta(days=1),
-                "views": 156
-            }
-        ]
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def send_ticket_created_email(self, ticket_id: str, tenant_id: str):
+        """Send ticket created email notification"""
         
-        # Filter by category
-        if category:
-            articles = [a for a in articles if a["category"] == category]
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            return
         
-        # Filter by search term
-        if search:
-            search_lower = search.lower()
-            articles = [
-                a for a in articles 
-                if search_lower in a["title"].lower() or 
-                   search_lower in a["summary"].lower() or
-                   search_lower in a["content"].lower()
-            ]
+        creator = self.db.query(User).filter(User.id == ticket.created_by).first()
+        if not creator:
+            return
         
-        return articles
+        email_notification = EmailNotification(
+            id=str(uuid.uuid4()),
+            ticket_id=ticket.id,
+            recipient=creator.email,
+            subject=f"Ticket Created: {ticket.title}",
+            body=f"Your ticket '{ticket.title}' has been created successfully.\n\nPriority: {ticket.priority.value}\nStatus: {ticket.status.value}\n\nView ticket: /support/tickets/{ticket.id}",
+            status=EmailStatusEnum.PENDING
+        )
+        
+        self.db.add(email_notification)
+        self.db.commit()
+    
+    def send_status_changed_email(self, ticket_id: str, old_status: str, new_status: str, tenant_id: str):
+        """Send status changed email"""
+        
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            return
+        
+        creator = self.db.query(User).filter(User.id == ticket.created_by).first()
+        if not creator:
+            return
+        
+        email_notification = EmailNotification(
+            id=str(uuid.uuid4()),
+            ticket_id=ticket.id,
+            recipient=creator.email,
+            subject=f"Ticket Status Changed: {ticket.title}",
+            body=f"Ticket status changed from '{old_status}' to '{new_status}'.\n\nView ticket: /support/tickets/{ticket.id}",
+            status=EmailStatusEnum.PENDING
+        )
+        
+        self.db.add(email_notification)
+        self.db.commit()
+    
+    def send_assignment_email(self, ticket_id: str, assignee_id: str, tenant_id: str):
+        """Send assignment email"""
+        
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        assignee = self.db.query(User).filter(User.id == assignee_id).first()
+        
+        if not ticket or not assignee:
+            return
+        
+        email_notification = EmailNotification(
+            id=str(uuid.uuid4()),
+            ticket_id=ticket.id,
+            recipient=assignee.email,
+            subject=f"Ticket Assigned: {ticket.title}",
+            body=f"You have been assigned to ticket '{ticket.title}'.\n\nPriority: {ticket.priority.value}\n\nView ticket: /support/tickets/{ticket.id}",
+            status=EmailStatusEnum.PENDING
+        )
+        
+        self.db.add(email_notification)
+        self.db.commit()
+    
+    def send_comment_added_email(self, ticket_id: str, comment_id: str, tenant_id: str):
+        """Send comment added email"""
+        
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            return
+        
+        creator = self.db.query(User).filter(User.id == ticket.created_by).first()
+        if not creator:
+            return
+        
+        email_notification = EmailNotification(
+            id=str(uuid.uuid4()),
+            ticket_id=ticket.id,
+            recipient=creator.email,
+            subject=f"New Comment on Ticket: {ticket.title}",
+            body=f"A new comment has been added to your ticket '{ticket.title}'.\n\nView ticket: /support/tickets/{ticket.id}",
+            status=EmailStatusEnum.PENDING
+        )
+        
+        self.db.add(email_notification)
+        self.db.commit()
+    
+    def send_escalation_email(self, ticket_id: str, escalation_id: str, tenant_id: str):
+        """Send escalation email"""
+        
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            return
+        
+        creator = self.db.query(User).filter(User.id == ticket.created_by).first()
+        if not creator:
+            return
+        
+        email_notification = EmailNotification(
+            id=str(uuid.uuid4()),
+            ticket_id=ticket.id,
+            recipient=creator.email,
+            subject=f"Ticket Escalated: {ticket.title}",
+            body=f"Your ticket '{ticket.title}' has been escalated.\n\nNew Priority: {ticket.priority.value}\n\nView ticket: /support/tickets/{ticket.id}",
+            status=EmailStatusEnum.PENDING
+        )
+        
+        self.db.add(email_notification)
+        self.db.commit()
+    
+    def send_reopened_email(self, ticket_id: str, tenant_id: str):
+        """Send reopened email"""
+        
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            return
+        
+        creator = self.db.query(User).filter(User.id == ticket.created_by).first()
+        if not creator:
+            return
+        
+        email_notification = EmailNotification(
+            id=str(uuid.uuid4()),
+            ticket_id=ticket.id,
+            recipient=creator.email,
+            subject=f"Ticket Reopened: {ticket.title}",
+            body=f"Your ticket '{ticket.title}' has been reopened.\n\nReopened Count: {ticket.reopened_count}\n\nView ticket: /support/tickets/{ticket.id}",
+            status=EmailStatusEnum.PENDING
+        )
+        
+        self.db.add(email_notification)
+        self.db.commit()
+
+
+class AuditService:
+    """Service for audit logging"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def log_event(
+        self,
+        entity_type: str,
+        entity_id: str,
+        action: str,
+        actor_id: str,
+        tenant_id: str,
+        metadata: Optional[Dict] = None
+    ):
+        """Log audit event"""
+        
+        audit_event = AuditEvent(
+            id=str(uuid.uuid4()),
+            entity_type=entity_type,
+            entity_id=entity_id,
+            action=action,
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            event_metadata=metadata
+        )
+        
+        self.db.add(audit_event)
+        self.db.commit()
