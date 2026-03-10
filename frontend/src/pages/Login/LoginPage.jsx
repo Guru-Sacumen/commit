@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../common/hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
+import ThemeToggle from '../../components/ThemeToggle';
 import TOTPVerification from '../../components/TOTPVerification';
 import TOTPSetupModal from '../../components/TOTPSetupModal';
 import './login.css';
@@ -23,7 +25,7 @@ function decodeTokenPayload(token) {
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [theme, setTheme] = useState('dark');
+  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,10 +36,6 @@ export default function LoginPage() {
   const [showTOTPSetup, setShowTOTPSetup] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-
-  const toggleTheme = () => {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -218,9 +216,15 @@ export default function LoginPage() {
       <div className="bg-shape shape-1" />
       <div className="bg-shape shape-2" />
 
-      <button className="theme-toggle" onClick={toggleTheme}>
-        {theme === 'dark' ? '☀️' : '🌙'}
-      </button>
+      {/* Theme Toggle - Top Right */}
+      <div className="theme-toggle-container" style={{
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        zIndex: 1000
+      }}>
+        <ThemeToggle />
+      </div>
 
       <div className="login-container">
         <div className="logo-container">

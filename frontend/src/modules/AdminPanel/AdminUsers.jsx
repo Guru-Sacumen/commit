@@ -1261,11 +1261,27 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          <div className="detail-tabs">
+          <div className="detail-tabs" style={{ borderBottomColor: 'var(--border)' }}>
             <button
               type="button"
               className={`detail-tab ${detailTab === 'admin' ? 'active' : ''}`}
               onClick={() => setDetailTab('admin')}
+              onMouseEnter={(e) => {
+                if (detailTab !== 'admin') {
+                  e.target.style.backgroundColor = 'var(--brand-hover)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (detailTab !== 'admin') {
+                  e.target.style.backgroundColor = 'var(--bg-card)';
+                }
+              }}
+              style={{
+                borderColor: detailTab === 'admin' ? 'transparent' : 'var(--border)',
+                color: detailTab === 'admin' ? '#ffffff' : 'var(--text-primary)',
+                backgroundColor: detailTab === 'admin' ? 'var(--brand-primary)' : 'var(--bg-card)',
+                transition: 'all 0.2s ease'
+              }}
             >
               Admin Details
             </button>
@@ -1273,6 +1289,22 @@ export default function AdminUsers() {
               type="button"
               className={`detail-tab ${detailTab === 'users' ? 'active' : ''}`}
               onClick={() => setDetailTab('users')}
+              onMouseEnter={(e) => {
+                if (detailTab !== 'users') {
+                  e.target.style.backgroundColor = 'var(--brand-hover)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (detailTab !== 'users') {
+                  e.target.style.backgroundColor = 'var(--bg-card)';
+                }
+              }}
+              style={{
+                borderColor: detailTab === 'users' ? 'transparent' : 'var(--border)',
+                color: detailTab === 'users' ? '#ffffff' : 'var(--text-primary)',
+                backgroundColor: detailTab === 'users' ? 'var(--brand-primary)' : 'var(--bg-card)',
+                transition: 'all 0.2s ease'
+              }}
             >
               Users
             </button>
@@ -1281,6 +1313,22 @@ export default function AdminUsers() {
                 type="button"
                 className={`detail-tab ${detailTab === 'connectors' ? 'active' : ''}`}
                 onClick={() => setDetailTab('connectors')}
+                onMouseEnter={(e) => {
+                  if (detailTab !== 'connectors') {
+                    e.target.style.backgroundColor = 'var(--brand-hover)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (detailTab !== 'connectors') {
+                    e.target.style.backgroundColor = 'var(--bg-card)';
+                  }
+                }}
+                style={{
+                  borderColor: detailTab === 'connectors' ? 'transparent' : 'var(--border)',
+                  color: detailTab === 'connectors' ? '#ffffff' : 'var(--text-primary)',
+                  backgroundColor: detailTab === 'connectors' ? 'var(--brand-primary)' : 'var(--bg-card)',
+                  transition: 'all 0.2s ease'
+                }}
               >
                 Connectors
               </button>

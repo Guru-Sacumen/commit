@@ -1,0 +1,133 @@
+/* ConnectX Theme System - CSS Variables */
+/* Based on PRD-MAIN.md Section 16.3 */
+
+/* DARK THEME — default for most modules */
+.theme-dark {
+  --bg-page       : #0f1117;
+  --bg-card       : #1a1f2e;
+  --bg-sidebar    : #0d1117;
+  --border        : #1e293b;
+  --text-primary  : #ffffff;
+  --text-muted    : #94a3b8;
+  --text-sidebar  : rgba(255, 255, 255, 0.8); /* Better sidebar text contrast */
+  --text-sidebar-dimmed: rgba(255, 255, 255, 0.6); /* Dimmed sidebar text */
+  --brand-primary : #00B4D8;
+  --brand-hover   : #0099b8;
+  --success       : #10b981;
+  --warning       : #f59e0b;
+  --danger        : #ef4444;
+  --info          : #3b82f6;
+}
+
+/* LIGHT THEME — Integration Library only */
+.theme-light {
+  --bg-page       : #f8fafc;
+  --bg-card       : #ffffff;
+  --bg-sidebar    : #0d1117;  /* sidebar always dark */
+  --border        : #e2e8f0;
+  --text-primary  : #0f172a;
+  --text-muted    : #64748b;
+  --text-sidebar  : rgba(255, 255, 255, 0.8); /* Better sidebar text contrast */
+  --text-sidebar-dimmed: rgba(255, 255, 255, 0.6); /* Dimmed sidebar text */
+  --brand-primary : #00B4D8;  /* accent same in both */
+  --brand-hover   : #0099b8;
+  --success       : #10b981;
+  --warning       : #f59e0b;
+  --danger        : #ef4444;
+  --info          : #3b82f6;
+}
+
+/* PRIORITY COLORS — tickets, used across modules */
+:root {
+  --priority-p1   : #ef4444;   /* critical */
+  --priority-p2   : #f59e0b;   /* high     */
+  --priority-p3   : #3b82f6;   /* medium   */
+  --priority-p4   : #94a3b8;   /* low      */
+}
+
+/* Apply theme variables to common elements */
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Card backgrounds */
+.card, .bg-card {
+  background-color: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* Sidebar */
+.sidebar, .bg-sidebar {
+  background-color: var(--bg-sidebar);
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-sidebar {
+  color: var(--text-sidebar);
+}
+
+.text-sidebar-dimmed {
+  color: var(--text-sidebar-dimmed);
+}
+
+/* Brand colors */
+.bg-brand-primary {
+  background-color: var(--brand-primary);
+}
+
+.bg-brand-hover:hover {
+  background-color: var(--brand-hover);
+}
+
+/* Status colors */
+.text-success {
+  color: var(--success);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+.text-info {
+  color: var(--info);
+}
+
+/* Border utilities */
+.border-theme {
+  border-color: var(--border);
+}
+
+/* Priority colors */
+.priority-p1 {
+  color: var(--priority-p1);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.priority-p2 {
+  color: var(--priority-p2);
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.priority-p3 {
+  color: var(--priority-p3);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.priority-p4 {
+  color: var(--priority-p4);
+  background-color: rgba(148, 163, 184, 0.1);
+}

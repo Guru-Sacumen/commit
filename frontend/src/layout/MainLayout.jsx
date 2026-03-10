@@ -5,9 +5,9 @@ import SideNav from './SideNav/SideNav';
 
 const MainLayout = () => {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
       <SideNav />
-      <main className="flex-1 flex flex-col relative bg-bg-page min-w-0">
+      <main className="flex-1 flex flex-col relative min-w-0" style={{ backgroundColor: 'var(--bg-page)' }}>
         <Header />
         <Outlet />
       </main>

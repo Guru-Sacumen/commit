@@ -52,15 +52,15 @@ const SideNav = () => {
   };
 
   return (
-    <aside className="w-[280px] flex-shrink-0 bg-sidebar-bg text-white flex flex-col z-100 border-r border-white/5">
+    <aside className="w-[280px] flex-shrink-0 text-white flex flex-col z-100 border-r" style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'rgba(255,255,255,0.05)' }}>
       <div className="px-6 py-8 text-2xl font-bold flex items-center tracking-[-0.5px]">
-        Connect<span className="text-brand-orange">X</span>
+        Connect<span style={{ color: 'var(--brand-primary)' }}>X</span>
       </div>
 
       <nav className="flex-1 py-2.5 flex flex-col gap-1 overflow-y-auto">
         {menuItems.map((section, sectionIndex) => (
           <div key={sectionIndex}>
-            <div className="text-xs text-text-dark-muted uppercase tracking-[1.5px] font-bold px-6 mb-3 mt-4">
+            <div className="text-xs uppercase tracking-[1.5px] font-bold px-6 mb-3 mt-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
               {section.label}
             </div>
             {section.items.map((item) => {
@@ -68,14 +68,18 @@ const SideNav = () => {
               return (
                 <div
                   key={item.id}
-                  className={`mx-3 px-4 py-3 cursor-pointer flex items-center gap-3 text-text-dark-muted text-sm font-medium rounded-xl transition-all duration-200 ${
+                  className={`mx-3 px-4 py-3 cursor-pointer flex items-center gap-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                     isActive(item.route)
-                      ? 'bg-[rgba(0,180,216,0.1)] text-brand-blue font-bold shadow-[inset_3px_0_0_var(--brand-blue)]'
-                      : 'hover:bg-sidebar-hover hover:text-white'
+                      ? 'font-bold shadow-[inset_3px_0_0_var(--brand-primary)]'
+                      : 'hover:bg-brand-hover'
                   }`}
+                  style={{
+                    color: isActive(item.route) ? '#00B4D8' : '#ffffff',
+                    backgroundColor: isActive(item.route) ? 'rgba(0,180,216,0.1)' : 'transparent'
+                  }}
                   onClick={() => handleNavClick(item.route)}
                 >
-                  <Icon className="w-5 h-5 stroke-2 fill-none flex-shrink-0" />
+                  <Icon className="w-5 h-5 stroke-2 fill-none flex-shrink-0" style={{ color: isActive(item.route) ? '#00B4D8' : '#ffffff' }} />
                   {item.label}
                 </div>
               );
@@ -85,20 +89,24 @@ const SideNav = () => {
       </nav>
       
       {/* Bottom Navigation */}
-      <div className="py-2.5 border-t border-white/10">
+      <div className="py-2.5" style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}>
         {bottomMenuItems.map((item) => {
           const Icon = item.icon;
           return (
             <div
               key={item.id}
-              className={`mx-3 px-4 py-3 cursor-pointer flex items-center gap-3 text-text-dark-muted text-sm font-medium rounded-xl transition-all duration-200 ${
+              className={`mx-3 px-4 py-3 cursor-pointer flex items-center gap-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                 isActive(item.route)
-                  ? 'bg-[rgba(0,180,216,0.1)] text-brand-blue font-bold shadow-[inset_3px_0_0_var(--brand-blue)]'
-                  : 'hover:bg-sidebar-hover hover:text-white'
+                  ? 'font-bold shadow-[inset_3px_0_0_var(--brand-primary)]'
+                  : 'hover:bg-brand-hover'
               }`}
+              style={{
+                color: isActive(item.route) ? '#00B4D8' : '#ffffff',
+                backgroundColor: isActive(item.route) ? 'rgba(0,180,216,0.1)' : 'transparent'
+              }}
               onClick={() => handleNavClick(item.route)}
             >
-              <Icon className="w-5 h-5 stroke-2 fill-none flex-shrink-0" />
+              <Icon className="w-5 h-5 stroke-2 fill-none flex-shrink-0" style={{ color: isActive(item.route) ? '#00B4D8' : '#ffffff' }} />
               {item.label}
             </div>
           );
@@ -106,8 +114,8 @@ const SideNav = () => {
       </div>
       
       {/* Powered by */}
-      <div className="px-6 py-4 text-center border-t border-white/10">
-        <p className="text-xs text-text-dark-muted">Powered by</p>
+      <div className="px-6 py-4 text-center" style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}>
+        <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Powered by</p>
         <p className="text-sm font-bold text-white">Sacumen</p>
       </div>
     </aside>
