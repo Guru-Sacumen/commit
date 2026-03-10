@@ -129,7 +129,7 @@ const AdminMarketplace = () => {
     try {
       setCategoriesLoading(true);
       
-      const categoriesRes = await fetch(`${API_BASE_URL}/connectors/categories`, {
+      const categoriesRes = await fetch(`${API_BASE_URL}/integration/connectors/categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

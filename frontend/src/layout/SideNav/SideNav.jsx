@@ -52,15 +52,21 @@ const SideNav = () => {
   };
 
   return (
-    <aside className="w-[280px] flex-shrink-0 text-white flex flex-col z-100 border-r" style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'rgba(255,255,255,0.05)' }}>
-      <div className="px-6 py-8 text-2xl font-bold flex items-center tracking-[-0.5px]">
-        Connect<span style={{ color: 'var(--brand-primary)' }}>X</span>
+    <aside className="w-[240px] flex-shrink-0 flex flex-col z-100 border-r" style={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb' }}>
+      <div className="px-4 py-3.5 min-h-[56px] border-b flex items-center gap-2.5" style={{ borderColor: '#e5e7eb' }}>
+        <div className="w-9 h-9 rounded-md text-white text-[13px] font-extrabold flex items-center justify-center" style={{ backgroundColor: '#7c3aed' }}>S</div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-[1px]" style={{ color: '#6b7280' }}>Sacumen</span>
+          <span className="text-[26px] leading-none font-bold tracking-[-0.4px]" style={{ color: '#111827' }}>
+            Connect<span style={{ color: '#7c3aed' }}>X</span>
+          </span>
+        </div>
       </div>
 
-      <nav className="flex-1 py-2.5 flex flex-col gap-1 overflow-y-auto">
+      <nav className="flex-1 py-3 px-2 flex flex-col gap-1 overflow-y-auto">
         {menuItems.map((section, sectionIndex) => (
           <div key={sectionIndex}>
-            <div className="text-xs uppercase tracking-[1.5px] font-bold px-6 mb-3 mt-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <div className="text-[11px] uppercase tracking-[1px] font-bold px-2 mb-2 mt-4" style={{ color: '#6b7280' }}>
               {section.label}
             </div>
             {section.items.map((item) => {
@@ -68,18 +74,16 @@ const SideNav = () => {
               return (
                 <div
                   key={item.id}
-                  className={`mx-3 px-4 py-3 cursor-pointer flex items-center gap-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                    isActive(item.route)
-                      ? 'font-bold shadow-[inset_3px_0_0_var(--brand-primary)]'
-                      : 'hover:bg-brand-hover'
+                  className={`px-2.5 py-2 cursor-pointer flex items-center gap-2.5 text-[14px] font-medium rounded-lg transition-all duration-150 ${
+                    isActive(item.route) ? 'font-semibold' : ''
                   }`}
                   style={{
-                    color: isActive(item.route) ? '#00B4D8' : '#ffffff',
-                    backgroundColor: isActive(item.route) ? 'rgba(0,180,216,0.1)' : 'transparent'
+                    color: isActive(item.route) ? '#7c3aed' : '#6b7280',
+                    backgroundColor: isActive(item.route) ? '#ede9fe' : 'transparent'
                   }}
                   onClick={() => handleNavClick(item.route)}
                 >
-                  <Icon className="w-5 h-5 stroke-2 fill-none flex-shrink-0" style={{ color: isActive(item.route) ? '#00B4D8' : '#ffffff' }} />
+                  <Icon className="sidenav-icon w-4 h-4 stroke-2 fill-none flex-shrink-0" style={{ color: isActive(item.route) ? '#7c3aed' : '#6b7280' }} />
                   {item.label}
                 </div>
               );
@@ -89,24 +93,17 @@ const SideNav = () => {
       </nav>
       
       {/* Bottom Navigation */}
-      <div className="py-2.5" style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}>
+      <div className="py-2.5 px-2 border-t" style={{ borderColor: '#e5e7eb' }}>
         {bottomMenuItems.map((item) => {
           const Icon = item.icon;
           return (
             <div
               key={item.id}
-              className={`mx-3 px-4 py-3 cursor-pointer flex items-center gap-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive(item.route)
-                  ? 'font-bold shadow-[inset_3px_0_0_var(--brand-primary)]'
-                  : 'hover:bg-brand-hover'
-              }`}
-              style={{
-                color: isActive(item.route) ? '#00B4D8' : '#ffffff',
-                backgroundColor: isActive(item.route) ? 'rgba(0,180,216,0.1)' : 'transparent'
-              }}
+              className="sidenav-item px-2.5 py-2 cursor-pointer flex items-center gap-2.5 text-[13px] font-medium rounded-lg transition-all duration-150"
+              style={{ color: '#6b7280' }}
               onClick={() => handleNavClick(item.route)}
             >
-              <Icon className="w-5 h-5 stroke-2 fill-none flex-shrink-0" style={{ color: isActive(item.route) ? '#00B4D8' : '#ffffff' }} />
+              <Icon className="sidenav-icon w-4 h-4 stroke-2 fill-none flex-shrink-0" style={{ color: '#6b7280' }} />
               {item.label}
             </div>
           );
@@ -114,9 +111,9 @@ const SideNav = () => {
       </div>
       
       {/* Powered by */}
-      <div className="px-6 py-4 text-center" style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}>
-        <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Powered by</p>
-        <p className="text-sm font-bold text-white">Sacumen</p>
+      <div className="px-4 py-3 text-center border-t" style={{ borderColor: '#e5e7eb' }}>
+        <p className="text-[11px]" style={{ color: '#6b7280' }}>Powered by</p>
+        <p className="text-[13px] font-bold" style={{ color: '#111827' }}>Sacumen</p>
       </div>
     </aside>
   );

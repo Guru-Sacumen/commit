@@ -1,41 +1,80 @@
 # modules/integration/schemas.py - Integration module specific schemas
-from pydantic import BaseModel
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
-class ConnectorTestRequest(BaseModel):
+class ConnectorUsecaseOut(BaseModel):
     connector_id: str
-    test_type: Optional[str] = "connection"
+    connector_name: str
+    connector_type: str
+    ingestion: list[str] = Field(default_factory=list)
+    action: list[str] = Field(default_factory=list)
 
 
-class ConnectorTestResponse(BaseModel):
-    ok: bool
+class ConnectorCardOut(BaseModel):
     connector_id: str
-    test_result: str
-    message: str
-    response_time_ms: Optional[int] = None
-    details: Optional[Dict[str, Any]] = None
+    name: str
+    type: str
+    logo_url: Optional[str] = None
+    guide_url: Optional[str] = None
+    json_url: Optional[str] = None
+    version_name: Optional[str] = None
+    status: Optional[str] = None
+    usecase: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
-class ConnectorHealthResponse(BaseModel):
-    status: str
-    last_check: Optional[str] = None
-    response_time_ms: Optional[int] = None
-    uptime_percentage: Optional[float] = None
-    error_message: Optional[str] = None
+class ConnectorStatsOut(BaseModel):
+    total_purchased: int
+    deployed: int
+    in_progress: int
+    marketplace_total: int
 
 
-class IntegrationConfig(BaseModel):
+class ConnectorRequestCreate(BaseModel):
     connector_id: str
-    config: Dict[str, Any]
-    enabled: bool = True
+    selected_ingestion: list[str] = Field(default_factory=list)
+    selected_action: list[str] = Field(default_factory=list)
+    custom_ingestion_text: Optional[str] = None
+    custom_action_text: Optional[str] = None
+    needs_guidance: bool = False
 
 
-class IntegrationLog(BaseModel):
+class ConnectorRequestRespond(BaseModel):
+    clarification_response: str
+
+
+class ConnectorRequestDecision(BaseModel):
+    action: str  # approve | decline | clarify
+    reason: Optional[str] = None
+    question: Optional[str] = None
+    internal_note: Optional[str] = None
+
+
+class ConnectorRequestOut(BaseModel):
     id: str
+    tenant_id: str
     connector_id: str
-    level: str
-    message: str
-    timestamp: datetime
-    metadata: Optional[Dict[str, Any]] = None
+    connector_name: str
+    connector_type: str
+    logo_url: Optional[str] = None
+    guide_url: Optional[str] = None
+    json_url: Optional[str] = None
+    version_name: Optional[str] = None
+    status: str
+    requested_by_user_id: Optional[str] = None
+    requested_by_email: Optional[str] = None
+    requested_by_name: Optional[str] = None
+    selected_ingestion: list[str] = Field(default_factory=list)
+    selected_action: list[str] = Field(default_factory=list)
+    custom_ingestion_text: Optional[str] = None
+    custom_action_text: Optional[str] = None
+    needs_guidance: bool = False
+    clarification_question: Optional[str] = None
+    clarification_response: Optional[str] = None
+    internal_notes: list[str] = Field(default_factory=list)
+    decision_note: Optional[str] = None
+    created_at: Optional[datetime] = None
+    decided_at: Optional[datetime] = None

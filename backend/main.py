@@ -222,14 +222,24 @@ def _slugify_connector_name(name: str) -> str:
 
 def _load_connector_catalog_from_excel() -> list[dict]:
     workbook_name = "Pre-built Connectors - New Use Cases Added Feb 26 V1.xlsx"
-    candidates = [
-        Path(__file__).resolve().parents[2] / workbook_name,
-        Path(__file__).resolve().parents[1] / workbook_name,
-        Path.cwd() / workbook_name,
-    ]
-    workbook_path = next((path for path in candidates if path.exists()), None)
+    # Allow explicit path via env (e.g. CONNECTOR_CATALOG_EXCEL_PATH=/path/to/file.xlsx)
+    env_path = os.getenv("CONNECTOR_CATALOG_EXCEL_PATH")
+    if env_path and Path(env_path).exists():
+        workbook_path = Path(env_path)
+    else:
+        candidates = [
+            Path(__file__).resolve().parents[2] / workbook_name,
+            Path(__file__).resolve().parents[1] / workbook_name,
+            Path(__file__).resolve().parents[1] / "docs" / workbook_name,
+            Path.cwd() / workbook_name,
+        ]
+        workbook_path = next((path for path in candidates if path.exists()), None)
     if not workbook_path:
-        print(f"[catalog] workbook not found: {workbook_name}")
+        print(
+            f"[catalog] workbook not found: {workbook_name}. "
+            f"Place it in project root, backend/, or backend/docs/. "
+            f"Or set CONNECTOR_CATALOG_EXCEL_PATH to the full path."
+        )
         return []
 
     try:
@@ -241,10 +251,38 @@ def _load_connector_catalog_from_excel() -> list[dict]:
     wb = openpyxl.load_workbook(workbook_path, data_only=True, read_only=True)
     ws = wb["Template"] if "Template" in wb.sheetnames else wb[wb.sheetnames[0]]
 
+    # Read header row to find use case column(s)
+    header_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+    headers = list(header_row) if header_row else []
+    usecase_col_indices: list[int] = []
+    for i, h in enumerate(headers):
+        if h is None:
+            continue
+        h_lower = str(h).lower().strip()
+        if "use" in h_lower and "case" in h_lower:
+            usecase_col_indices.append(i)
+        elif h_lower in ("ingestion", "action", "usecase"):
+            usecase_col_indices.append(i)
+    usecase_from_header = bool(usecase_col_indices)
+    if not usecase_col_indices:
+        usecase_col_indices = [2, 3, 4, 5]  # fallback: try common positions
+
     rows: list[dict] = []
     used_ids: set[str] = set()
     current_type = ""
-    for category, system_name, *_ in ws.iter_rows(min_row=2, values_only=True):
+    for row_tuple in ws.iter_rows(min_row=2, values_only=True):
+        parts = list(row_tuple) if row_tuple else []
+        category = parts[0] if len(parts) > 0 else None
+        system_name = parts[1] if len(parts) > 1 else None
+        usecase_parts: list[str] = []
+        for idx in usecase_col_indices:
+            if idx < len(parts) and parts[idx] is not None:
+                val = str(parts[idx]).strip()
+                if val:
+                    usecase_parts.append(val)
+                    if not usecase_from_header:
+                        break  # fallback: use first non-empty column only
+        usecase_val = "\n".join(usecase_parts) if usecase_parts else None
         if category and str(category).strip():
             current_type = str(category).strip()
 
@@ -268,6 +306,7 @@ def _load_connector_catalog_from_excel() -> list[dict]:
                 "connector_id": connector_id,
                 "name": name,
                 "type": current_type or "Unknown",
+                "usecase": usecase_val,
             }
         )
 
@@ -284,11 +323,11 @@ def _sync_connector_catalog_from_excel() -> None:
 
         existing_rows = db.query(models.ConnectorCatalog).all()
         existing_map = {
-            row.connector_id: (row.name, row.type)
+            row.connector_id: (row.name, row.type, row.usecase)
             for row in existing_rows
         }
         incoming_map = {
-            row["connector_id"]: (row["name"], row["type"])
+            row["connector_id"]: (row["name"], row["type"], row.get("usecase"))
             for row in rows
         }
         if existing_map == incoming_map:
@@ -302,6 +341,7 @@ def _sync_connector_catalog_from_excel() -> None:
                     connector_id=row["connector_id"],
                     name=row["name"],
                     type=row["type"],
+                    usecase=row.get("usecase"),
                 )
             )
         db.commit()
@@ -315,6 +355,33 @@ def _sync_connector_catalog_from_excel() -> None:
 
 
 _sync_connector_catalog_from_excel()
+
+
+def _backfill_connector_guide_json_urls() -> None:
+    """One-time backfill: replace placeholder 'Guide'/'JSON' with actual API paths."""
+    try:
+        db = SessionLocal()
+        rows = db.query(models.ConnectorCatalog).all()
+        changed = 0
+        for r in rows:
+            needs_update = False
+            if r.guide_url in (None, "Guide", ""):
+                r.guide_url = f"/integration/connectors/{r.connector_id}/guide"
+                needs_update = True
+            if r.json_url in (None, "JSON", ""):
+                r.json_url = f"/integration/connectors/{r.connector_id}/json"
+                needs_update = True
+            if needs_update:
+                changed += 1
+        if changed:
+            db.commit()
+            print(f"[catalog] backfilled guide/json URLs for {changed} catalog rows")
+        db.close()
+    except Exception as exc:
+        print(f"[catalog] guide/json backfill skipped: {exc}")
+
+
+_backfill_connector_guide_json_urls()
 
 # simple mail helper (must be defined prior to endpoints)
 SMTP_HOST = os.getenv("SMTP_HOST")
@@ -750,6 +817,18 @@ app.include_router(users_router)
 
 
 # Additional endpoints for connector catalog
+def _resolve_guide_url(stored: str | None, connector_id: str) -> str:
+    if stored and (stored.startswith("/") or stored.startswith("http")):
+        return stored
+    return f"/integration/connectors/{connector_id}/guide"
+
+
+def _resolve_json_url(stored: str | None, connector_id: str) -> str:
+    if stored and (stored.startswith("/") or stored.startswith("http")):
+        return stored
+    return f"/integration/connectors/{connector_id}/json"
+
+
 @app.get("/connectors/catalog", response_model=list[dict])
 def get_connector_catalog(db: Session = Depends(get_db)):
     """Get all available connectors from catalog"""
@@ -761,7 +840,11 @@ def get_connector_catalog(db: Session = Depends(get_db)):
             "connector_id": connector.connector_id,
             "name": connector.name,
             "type": connector.type,
-            "created_at": connector.created_at
+            "guide_url": _resolve_guide_url(connector.guide_url, connector.connector_id),
+            "json_url": _resolve_json_url(connector.json_url, connector.connector_id),
+            "version_name": connector.version_name or "v1.0.0",
+            "logo_url": connector.logo_url or "https://via.placeholder.com/28",
+            "created_at": connector.created_at,
         }
         for connector in connectors
     ]
@@ -960,17 +1043,3 @@ def get_tenant_connectors(
     ]
 
 
-@app.get("/connectors/categories", response_model=list[dict])
-def get_connector_categories(db: Session = Depends(get_db)):
-    """Get all available connector categories"""
-    from models import ConnectorCategory
-    categories = db.query(ConnectorCategory).all()
-    return [
-        {
-            "id": category.id,
-            "name": category.name,
-            "description": category.description,
-            "created_at": category.created_at
-        }
-        for category in categories
-    ]

@@ -5,7 +5,7 @@ import AuthGuard from "../components/AuthGuard/AuthGuard";
 import { useAuth } from "../common/hooks/useAuth";
 
 import NotFound from "@pages/NotFound/NotFound";
-import UserProfile from "@pages/UserProfile/UserProfile";
+import Profile from "@modules/Profile/Profile";
 import IntegrationRoutes from "../modules/Integrationlibrary/Integrationlibrary.routes";
 import AdminPanelRoutes from "../modules/AdminPanel/AdminPanel.routes";
 import LabValidationRoutes from "../modules/LabValidation/LabValidation.routes";
@@ -86,7 +86,7 @@ const router = createBrowserRouter([
       },
       {
         path: "profile",
-        element: <UserProfile />,
+        element: <Profile />,
       },
       ...IntegrationRoutes,
       ...LabValidationRoutes,

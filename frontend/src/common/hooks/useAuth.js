@@ -68,9 +68,12 @@ export const useAuth = () => {
     clearAuth();
   };
 
+  const token = localStorage.getItem('connectx_token') || localStorage.getItem('authToken') || null;
+
   return {
     isAuthenticated,
     user,
+    token,
     loading,
     login,
     logout,

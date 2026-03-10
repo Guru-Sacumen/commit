@@ -14,6 +14,9 @@ class Connector(Base):
     category = Column(String, nullable=False)
     type = Column(String, nullable=False)
     logo_url = Column(String, nullable=True)
+    guide_url = Column(String, nullable=True)
+    json_url = Column(String, nullable=True)
+    version_name = Column(String, nullable=True)
     external_url = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -28,6 +31,10 @@ class ConnectorCatalog(Base):
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)
     usecase = Column(Text, nullable=True)
+    logo_url = Column(String, nullable=True)
+    guide_url = Column(String, nullable=True)
+    json_url = Column(String, nullable=True)
+    version_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -48,6 +55,10 @@ class ConnectorRequest(Base):
     connector_id = Column(String, nullable=False)
     connector_name = Column(String, nullable=False)
     connector_type = Column(String, nullable=False)
+    logo_url = Column(String, nullable=True)
+    guide_url = Column(String, nullable=True)
+    json_url = Column(String, nullable=True)
+    version_name = Column(String, nullable=True)
     status = Column(
         Enum(ConnectorRequestStatus, name="connectorrequeststatus"),
         default=ConnectorRequestStatus.PENDING,

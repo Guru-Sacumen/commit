@@ -1,0 +1,21 @@
+{
+  "connector": {
+    "name": "{{connector_name}}",
+    "version": "v1.0.0",
+    "type": "prebuilt"
+  },
+  "connection": {
+    "base_url": "https://api.example.com",
+    "auth_type": "bearer",
+    "timeout_seconds": 30
+  },
+  "ingestion": {
+    "enabled": true,
+    "batch_size": 100,
+    "poll_interval_minutes": 5
+  },
+  "actions": {
+    "enabled": true,
+    "supported_operations": ["create", "update", "query"]
+  }
+}

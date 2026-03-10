@@ -21,16 +21,16 @@
 
 /* LIGHT THEME — Integration Library only */
 .theme-light {
-  --bg-page       : #f8fafc;
+  --bg-page       : #f8f7fc;
   --bg-card       : #ffffff;
-  --bg-sidebar    : #0d1117;  /* sidebar always dark */
-  --border        : #e2e8f0;
-  --text-primary  : #0f172a;
-  --text-muted    : #64748b;
-  --text-sidebar  : rgba(255, 255, 255, 0.8); /* Better sidebar text contrast */
-  --text-sidebar-dimmed: rgba(255, 255, 255, 0.6); /* Dimmed sidebar text */
-  --brand-primary : #00B4D8;  /* accent same in both */
-  --brand-hover   : #0099b8;
+  --bg-sidebar    : #ffffff;
+  --border        : #e5e7eb;
+  --text-primary  : #111827;
+  --text-muted    : #6b7280;
+  --text-sidebar  : #6b7280;
+  --text-sidebar-dimmed: #9ca3af;
+  --brand-primary : #7c3aed;
+  --brand-hover   : #6d28d9;
   --success       : #10b981;
   --warning       : #f59e0b;
   --danger        : #ef4444;

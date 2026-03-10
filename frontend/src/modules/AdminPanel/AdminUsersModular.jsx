@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './admin.css';
 
@@ -16,6 +16,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000
 export default function AdminUsersModular({ showOnlyCompanies = false }) {
   const navigate = useNavigate();
   const { tenantId } = useParams();
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [pendingRejectRequest, setPendingRejectRequest] = useState(null);
   
   // Use the custom hook for all state management
   const {
@@ -68,6 +71,7 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
     tenantFromStorage,
     tenantFromToken,
     effectiveTenantId,
+    setEffectiveTenantId,
     selectedCompany,
     currentTenant,
     catalogById,
@@ -342,6 +346,97 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
     setInfo('Connector request report exported.');
   }
 
+  async function processConnectorRequestDecision(request, action, reason = '') {
+    if (!isSuper) return;
+    if (!request?.id) return;
+
+    setError('');
+    setInfo('');
+    setRequestBusyId(request.id);
+    try {
+      const mappedAction =
+        action === 'grant'
+          ? 'approve'
+          : action === 'deny' || action === 'reject'
+            ? 'decline'
+            : action;
+      const payload = { action: mappedAction };
+      if (mappedAction === 'decline') {
+        payload.reason = (reason || 'Declined by superadmin').trim();
+      }
+
+      const res = await fetch(`${API_BASE_URL}/integration/superadmin/requests/${request.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        throw new Error(extractErrorMessage(await res.text(), 'Failed to process connector request'));
+      }
+
+      const updated = await res.json();
+      setConnectorRequests((prev) =>
+        prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
+      );
+      if (updated.status === 'GRANTED') {
+        setPurchasedConnectorIds((prev) => {
+          const next = new Set(prev);
+          next.add(updated.connector_id);
+          return next;
+        });
+        setPurchasedConnectorMeta((prev) => {
+          const next = new Map(prev);
+          next.set(updated.connector_id, {
+            name: updated.connector_name || updated.connector_id,
+            type: updated.connector_type || 'Unknown',
+          });
+          return next;
+        });
+      }
+      setInfo(
+        action === 'grant'
+          ? `Granted request for ${updated.connector_name || updated.connector_id}.`
+          : `Declined request for ${updated.connector_name || updated.connector_id}.`,
+      );
+      setSelectedRequestIds((prev) => {
+        const next = new Set(prev);
+        next.delete(request.id);
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      setError('Unable to process connector request.');
+    } finally {
+      setRequestBusyId('');
+    }
+  }
+
+  function openRejectModal(request) {
+    setPendingRejectRequest(request);
+    setRejectReason('');
+    setShowRejectModal(true);
+  }
+
+  function closeRejectModal() {
+    setShowRejectModal(false);
+    setRejectReason('');
+    setPendingRejectRequest(null);
+  }
+
+  async function submitRejectModal() {
+    const reason = rejectReason.trim();
+    if (!reason) {
+      setError('Rejection reason is required.');
+      return;
+    }
+    if (!pendingRejectRequest) return;
+    await processConnectorRequestDecision(pendingRejectRequest, 'decline', reason);
+    closeRejectModal();
+  }
+
   // Initialize data - keeping exact same logic
   useEffect(() => {
     let cancelled = false;
@@ -396,12 +491,20 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
           setIsSuper(false);
           setForbidden(false);
           setViewMode('detail');
-          setSelectedTenant(effectiveTenantId || '');
+          const resolvedTenantId =
+            effectiveTenantId || me.tenant_id || tenantFromToken || tenantFromStorage || '';
+          setSelectedTenant(resolvedTenantId);
+          if (resolvedTenantId) {
+            setEffectiveTenantId(resolvedTenantId);
+            localStorage.setItem('connectx_tenant_id', resolvedTenantId);
+          } else {
+            setError('Tenant context missing for this admin account. Please sign in again.');
+          }
           // For regular admins, fetch their company details
           try {
-            console.log('Admin logged in for tenant:', effectiveTenantId);
-            if (effectiveTenantId) {
-              const companyDetails = await fetchCompanyDetails(effectiveTenantId);
+            console.log('Admin logged in for tenant:', resolvedTenantId);
+            if (resolvedTenantId) {
+              const companyDetails = await fetchCompanyDetails(resolvedTenantId);
               setAdminCompany(companyDetails);
             }
           } catch (err) {
@@ -806,65 +909,17 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
             }
           }}
           onConnectorRequestDecision={async (request, action) => {
-            if (!isSuper) return;
-            if (!request?.id) return;
-
-            setError('');
-            setInfo('');
-            setRequestBusyId(request.id);
-            try {
-              const payload = { action };
-              if (action === 'grant') {
-                const url = window.prompt('Optional access URL to provide to tenant (leave blank if none):');
-                if (url) payload.granted_access_url = url;
-              }
-              const res = await fetch(`${API_BASE_URL}/superadmin/connector-requests/${request.id}`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-              });
-              if (!res.ok) {
-                throw new Error(extractErrorMessage(await res.text(), 'Failed to process connector request'));
-              }
-
-              const updated = await res.json();
-              setConnectorRequests((prev) =>
-                prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
-              );
-              if (updated.status === 'GRANTED') {
-                setPurchasedConnectorIds((prev) => {
-                  const next = new Set(prev);
-                  next.add(updated.connector_id);
-                  return next;
-                });
-                setPurchasedConnectorMeta((prev) => {
-                  const next = new Map(prev);
-                  next.set(updated.connector_id, {
-                    name: updated.connector_name || updated.connector_id,
-                    type: updated.connector_type || 'Unknown',
-                  });
-                  return next;
-                });
-              }
-              setInfo(
-                action === 'grant'
-                  ? `Granted request for ${updated.connector_name || updated.connector_id}.`
-                  : `Declined request for ${updated.connector_name || updated.connector_id}.`,
-              );
-              setSelectedRequestIds((prev) => {
-                const next = new Set(prev);
-                next.delete(request.id);
-                return next;
-              });
-            } catch (err) {
-              console.error(err);
-              setError('Unable to process connector request.');
-            } finally {
-              setRequestBusyId('');
+            const mappedAction =
+              action === 'grant'
+                ? 'approve'
+                : action === 'deny' || action === 'reject'
+                  ? 'decline'
+                  : action;
+            if (mappedAction === 'decline') {
+              openRejectModal(request);
+              return;
             }
+            await processConnectorRequestDecision(request, mappedAction);
           }}
           onToggleRequestSelection={toggleRequestSelection}
           onSelectAllPendingRequests={selectAllPendingRequests}
@@ -895,6 +950,12 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
           onRefreshData={refreshTenantData}
           onMarketplaceUpdate={refreshTenantData}
         />
+      )}
+
+      {!showOnlyCompanies && !isSuper && !adminCompany && (
+        <div style={{ padding: 24, color: '#0f172a' }}>
+          {error || 'Loading your company details...'}
+        </div>
       )}
 
       {/* Superadmin - Show Companies Home */}
@@ -1092,65 +1153,17 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
             }
           }}
           onConnectorRequestDecision={async (request, action) => {
-            if (!isSuper) return;
-            if (!request?.id) return;
-
-            setError('');
-            setInfo('');
-            setRequestBusyId(request.id);
-            try {
-              const payload = { action };
-              if (action === 'grant') {
-                const url = window.prompt('Optional access URL to provide to tenant (leave blank if none):');
-                if (url) payload.granted_access_url = url;
-              }
-              const res = await fetch(`${API_BASE_URL}/superadmin/connector-requests/${request.id}`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-              });
-              if (!res.ok) {
-                throw new Error(extractErrorMessage(await res.text(), 'Failed to process connector request'));
-              }
-
-              const updated = await res.json();
-              setConnectorRequests((prev) =>
-                prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
-              );
-              if (updated.status === 'GRANTED') {
-                setPurchasedConnectorIds((prev) => {
-                  const next = new Set(prev);
-                  next.add(updated.connector_id);
-                  return next;
-                });
-                setPurchasedConnectorMeta((prev) => {
-                  const next = new Map(prev);
-                  next.set(updated.connector_id, {
-                    name: updated.connector_name || updated.connector_id,
-                    type: updated.connector_type || 'Unknown',
-                  });
-                  return next;
-                });
-              }
-              setInfo(
-                action === 'grant'
-                  ? `Granted request for ${updated.connector_name || updated.connector_id}.`
-                  : `Declined request for ${updated.connector_name || updated.connector_id}.`,
-              );
-              setSelectedRequestIds((prev) => {
-                const next = new Set(prev);
-                next.delete(request.id);
-                return next;
-              });
-            } catch (err) {
-              console.error(err);
-              setError('Unable to process connector request.');
-            } finally {
-              setRequestBusyId('');
+            const mappedAction =
+              action === 'grant'
+                ? 'approve'
+                : action === 'deny' || action === 'reject'
+                  ? 'decline'
+                  : action;
+            if (mappedAction === 'decline') {
+              openRejectModal(request);
+              return;
             }
+            await processConnectorRequestDecision(request, mappedAction);
           }}
           onToggleRequestSelection={toggleRequestSelection}
           onSelectAllPendingRequests={selectAllPendingRequests}
@@ -1179,6 +1192,63 @@ export default function AdminUsersModular({ showOnlyCompanies = false }) {
           }}
           selectedRequestIds={selectedRequestIds}
         />
+      )}
+      {showRejectModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={closeRejectModal}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 520,
+              background: '#fff',
+              borderRadius: 12,
+              padding: 20,
+              boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 style={{ margin: 0, marginBottom: 8 }}>Reject connector request</h3>
+            <p style={{ margin: 0, marginBottom: 12, color: '#64748b' }}>
+              Add a reason visible to the tenant user.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              rows={4}
+              placeholder="Enter rejection reason..."
+              style={{
+                width: '100%',
+                border: '1px solid #cbd5e1',
+                borderRadius: 8,
+                padding: 10,
+                resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+              <button type="button" className="secondary-btn" onClick={closeRejectModal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="danger-btn"
+                onClick={submitRejectModal}
+                disabled={!rejectReason.trim()}
+              >
+                Reject Request
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AdminContainer>
   );

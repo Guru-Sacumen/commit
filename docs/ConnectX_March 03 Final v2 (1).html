@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConnectX Enterprise Console | CTO Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-blue: #00B4D8; --brand-blue-dark: #0284c7; --brand-orange: #FF6B00;
+            --sidebar-bg: #030812; --sidebar-hover: #0f172a;
+            --bg-page: #f8fafc; --bg-card: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border-light: #e2e8f0;
+            --bg-dark-page: #020617; --bg-dark-card: #0f172a; --text-dark-main: #f8fafc; --text-dark-muted: #94a3b8; --border-dark: #1e293b;
+            --success: #10b981; --success-bg: rgba(16, 185, 129, 0.1); --warning: #f59e0b; --warning-bg: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444; --danger-bg: rgba(239, 68, 68, 0.1); --info: #3b82f6; --live-bg: rgba(139, 92, 246, 0.15); --live-text: #a78bfa;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05); --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --radius-md: 8px; --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-page); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+        /* SIDEBAR */
+        .sidebar { width: 280px; flex-shrink: 0; background-color: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; z-index: 100; border-right: 1px solid rgba(255,255,255,0.05); }
+        .brand { padding: 32px 24px; font-size: 28px; font-weight: 800; display: flex; align-items: center; letter-spacing: -0.5px; }
+        .brand span { color: var(--brand-orange); }
+        .nav-menu { flex: 1; padding: 10px 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto;}
+        .nav-label { font-size: 11px; text-transform: uppercase; color: var(--text-dark-muted); letter-spacing: 1.5px; font-weight: 700; padding: 0 24px; margin-bottom: 12px; margin-top: 16px; }
+        .nav-item { margin: 0 12px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text-dark-muted); font-size: 14px; font-weight: 500; border-radius: 12px; transition: all 0.2s ease; }
+        .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+        .nav-item.active { background: rgba(0, 180, 216, 0.1); color: var(--brand-blue); font-weight: 600; box-shadow: inset 3px 0 0 var(--brand-blue); }
+        .nav-item svg { width: 20px; height: 20px; stroke-width: 2; fill: none; stroke: currentColor; flex-shrink: 0;}
+
+        /* MAIN & TOPBAR */
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; background: var(--bg-page); min-width: 0; }
+        .topbar { height: 80px; flex-shrink: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; position: sticky; top: 0; z-index: 50; gap: 24px; }
+        .global-search { position: relative; flex: 1; max-width: 450px; min-width: 200px; }
+        .global-search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; }
+        .global-search input { width: 100%; padding: 12px 16px 12px 48px; border: 1px solid var(--border-light); border-radius: 24px; font-family: inherit; font-size: 14px; background: var(--bg-page); outline: none; transition: 0.2s; font-weight: 500;}
+        .global-search input:focus { border-color: var(--brand-blue); background: var(--bg-card); box-shadow: 0 0 0 4px rgba(0,180,216,0.1); }
+
+        .topbar-right { display: flex; align-items: center; gap: 24px; flex-shrink: 0;}
+        .env-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-main); background: var(--bg-page); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border-light); white-space: nowrap;}
+        .env-badge .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
+
+        .user-profile { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 6px 12px; border-radius: 12px; transition: background 0.2s, box-shadow 0.2s; white-space: nowrap;}
+        .user-profile:hover { background: var(--bg-page); box-shadow: inset 0 0 0 1px var(--border-light); }
+        .up-text { display: flex; flex-direction: column; align-items: flex-end; }
+        .up-name { font-size: 14px; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+        .up-role { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        .avatar { width: 40px; height: 40px; background: linear-gradient(135deg, var(--sidebar-bg), #1e293b); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; box-shadow: var(--shadow-sm); flex-shrink: 0;}
+
+        /* TABS */
+        .tab-pane { display: none; flex: 1; overflow-y: auto; padding: 40px; }
+        .tab-pane.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .theme-dark-tab { background-color: var(--bg-dark-page); color: var(--text-dark-main); }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;}
+        .section-title h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px;}
+        .section-title p { color: var(--text-muted); font-size: 15px; font-weight: 500; max-width: 800px; line-height: 1.5;}
+        .theme-dark-tab .section-title p { color: var(--text-dark-muted); }
+
+        /* BUTTONS */
+        .btn { padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; font-family: inherit; border: none; white-space: nowrap;}
+        .btn-primary { background: var(--brand-blue); color: white; box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2); }
+        .btn-primary:hover { background: var(--brand-blue-dark); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 180, 216, 0.3); }
+        .btn-outline { background: transparent; border: 1px solid var(--border-light); color: var(--text-main); }
+        .btn-outline:hover { background: var(--bg-page); border-color: var(--text-muted); transform: translateY(-2px); }
+        .theme-dark-tab .btn-outline { border-color: var(--border-dark); color: white; }
+        .theme-dark-tab .btn-outline:hover { background: var(--bg-dark-card); border-color: var(--text-dark-muted); }
+
+        /* WIDGETS */
+        .exec-widget-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .exec-widget { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .theme-dark-tab .exec-widget { background: var(--bg-dark-card); border-color: var(--border-dark); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .ew-info h3 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 0.5px;}
+        .theme-dark-tab .ew-info h3 { color: var(--text-dark-muted); }
+        .ew-info .val { font-size: 32px; font-weight: 800; color: var(--text-main); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;}
+        .theme-dark-tab .ew-info .val { color: white; }
+
+        /* TOGGLE SWITCHES */
+        .controls-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .toggle-switch { display: inline-flex; background: var(--border-light); border-radius: 12px; padding: 6px; gap: 4px; }
+        .theme-dark-tab .toggle-switch { background: rgba(255,255,255,0.05); }
+        .toggle-btn { padding: 10px 24px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.3s; white-space: nowrap; }
+        .theme-dark-tab .toggle-btn { color: var(--text-dark-muted); }
+        .toggle-btn.active { background: var(--bg-card); color: var(--text-main); box-shadow: var(--shadow-md); }
+        .theme-dark-tab .toggle-btn.active { background: var(--bg-dark-page); color: white; border: 1px solid var(--border-dark); }
+
+        /* RESPONSIVE FLUID GRIDS */
+        .grid-responsive { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px; }
+
+        .connector-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); transition: 0.3s; display: flex; flex-direction: column; }
+        .theme-dark-tab .connector-card { background: var(--bg-dark-card); border-color: var(--border-dark); }
+        .connector-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); border-color: var(--brand-blue); }
+        .vendor-logo { width: 48px; height: 48px; background: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-light); padding: 6px; box-shadow: var(--shadow-sm); flex-shrink: 0;}
+        .vendor-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .vendor-logo.sm { width: 40px; height: 40px; border-radius: 8px; padding: 4px; }
+        .cc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px;}
+        .status-pill { font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;}
+        .pill-deployed { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .pill-requested { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .cc-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;}
+        .theme-dark-tab .cc-title { color: white; }
+        .cc-cat { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px; flex: 1; }
+        .theme-dark-tab .cc-cat { color: var(--brand-blue); }
+
+        /* MARKETPLACE TOOLBAR */
+        .market-toolbar { display: none; align-items: center; gap: 16px; flex-wrap: wrap;}
+        .market-toolbar.active { display: flex; animation: slideUp 0.3s ease; }
+        .filter-input { padding: 10px 16px 10px 40px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; outline: none; background: var(--bg-card) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 14px center; width: 260px; font-weight: 500;}
+        .filter-select { padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; outline: none; background: var(--bg-card); font-weight: 500; cursor: pointer; }
+
+        /* PAGINATION */
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 32px; grid-column: 1 / -1; }
+        .page-btn { background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-main); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;}
+        .page-btn:hover { background: var(--bg-page); border-color: var(--brand-blue); }
+        .page-btn.active { background: var(--brand-blue); color: white; border-color: var(--brand-blue); }
+        .theme-dark-tab .page-btn { background: var(--bg-dark-card); border-color: var(--border-dark); color: white; }
+
+        /* LAB TAB */
+        .env-type-badge { font-size: 11px; font-weight: 800; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;}
+        .env-virtual { background: rgba(0, 180, 216, 0.1); color: var(--brand-blue); border: 1px solid rgba(0, 180, 216, 0.2); }
+        .env-live { background: var(--live-bg); color: var(--live-text); border: 1px solid rgba(139, 92, 246, 0.3); }
+        .lab-card { background: var(--bg-dark-card); border: 1px solid var(--border-dark); border-radius: var(--radius-lg); padding: 24px; position: relative; overflow: hidden; transition: 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.2);}
+        .lab-card:hover { transform: translateY(-4px); border-color: var(--brand-blue); box-shadow: 0 10px 30px rgba(0,0,0,0.4);}
+        .lab-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--success); }
+        .lc-details { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+        .lc-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-dark-muted); font-weight: 500;}
+
+        /* TAB 3: TESTING */
+        .report-gen-box { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 32px; margin-bottom: 32px; box-shadow: var(--shadow-sm); }
+        .report-gen-grid { display: grid; grid-template-columns: 2fr 1fr auto; gap: 24px; align-items: start; }
+        @media(max-width: 1000px) { .report-gen-grid { grid-template-columns: 1fr; } }
+        .input-group { display: flex; flex-direction: column; gap: 10px; position: relative; }
+        .input-group label { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        .custom-select-wrapper { position: relative; width: 100%; user-select: none; }
+        .custom-select-display { border: 1px solid var(--border-light); border-radius: 8px; padding: 12px 16px; background: var(--bg-card); font-size: 14px; font-weight: 600; color: var(--text-main); cursor: pointer; display: flex; justify-content: space-between; align-items: center; min-height: 46px;}
+        .custom-select-dropdown { position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: var(--shadow-lg); z-index: 100; display: none; max-height: 250px; overflow-y: auto; padding: 8px 0; }
+        .custom-select-dropdown.show { display: block; animation: slideUp 0.2s ease; }
+        .custom-select-option { padding: 10px 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; cursor: pointer;}
+        .input-group select { padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; outline: none; background: var(--bg-card); height: 46px;}
+
+        .test-table-wrapper { background: var(--bg-card); border-radius: var(--radius-lg); overflow-x: auto; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);}
+        .test-table { width: 100%; border-collapse: collapse; min-width: 800px;}
+        .test-table th { background: var(--bg-page); padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-light); white-space: nowrap;}
+        .test-table td { padding: 20px 24px; border-bottom: 1px solid var(--border-light); font-size: 14px; font-weight: 500; vertical-align: middle; }
+        .row-fail { background: #fef2f2 !important; border-left: 4px solid var(--danger); }
+        .drift-tag { background: var(--danger); color: white; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; margin-left: 12px; text-transform: uppercase; white-space: nowrap;}
+
+        /* TAB 4: ENHANCED AGENTIC MONITOR */
+        .mon-split { display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start;}
+        @media(max-width: 1200px) { .mon-split { grid-template-columns: 1fr; } }
+
+        .sla-card { background: var(--bg-dark-card); border: 1px solid var(--border-dark); border-radius: var(--radius-lg); padding: 32px; display: flex; flex-direction: column; align-items: center; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.2);}
+        .donut-wrapper { margin-top: 40px; display: flex; flex-direction: column; align-items: center; width: 100%;}
+        .donut-chart { width: 220px; height: 220px; border-radius: 50%; background: conic-gradient(var(--success) 0% 87.9%, var(--warning) 87.9% 94.8%, var(--danger) 94.8% 98.2%, var(--brand-blue) 98.2% 100%); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(0,0,0,0.4); }
+        .donut-inner { width: 160px; height: 160px; background: var(--bg-dark-card); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 4px 10px rgba(0,0,0,0.5); }
+        .chart-legend { margin-top: 40px; width: 100%; list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 0;}
+        .chart-legend li { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-dark); cursor: pointer; transition: 0.2s;}
+        .chart-legend li:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); transform: translateX(4px);}
+
+        .mon-box-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; align-content: start;}
+        .mon-box { background: var(--bg-dark-card); border: 1px solid var(--border-dark); border-radius: var(--radius-md); padding: 24px; cursor: pointer; transition: all 0.3s; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; justify-content: space-between;}
+        .mon-box:hover { border-color: var(--brand-blue); transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,180,216,0.15); }
+        .mon-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--success); border-top-left-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md);}
+        .mon-box.degraded::before { background: var(--danger); }
+        .mon-box.warning::before { background: var(--warning); }
+        .agentic-badge { background: rgba(0, 180, 216, 0.1); color: var(--brand-blue); font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; border: 1px solid rgba(0, 180, 216, 0.2); display: inline-flex; align-items: center; gap: 4px; height: fit-content; white-space: nowrap;}
+        .health-bar-container { width: 100%; height: 6px; background: var(--border-dark); border-radius: 3px; margin-top: 16px; overflow: hidden; }
+        .health-bar-fill { height: 100%; background: var(--success); border-radius: 3px; }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px;}
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content { background: var(--bg-dark-card); border: 1px solid var(--border-dark); border-radius: var(--radius-lg); width: 100%; max-width: 650px; padding: 40px; color: white; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 90vh; overflow-y: auto;}
+        .modal-close { position: absolute; top: 24px; right: 24px; background: transparent; border: none; color: var(--text-dark-muted); cursor: pointer; transition: 0.2s;}
+        .modal-close:hover { color: white; transform: rotate(90deg);}
+        .modal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 32px; }
+        .md-stat { background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--border-dark); }
+        .md-label { font-size: 12px; color: var(--text-dark-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700;}
+        .md-val { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+
+        /* TAB 5: SUPPORT KANBAN */
+        .kanban-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: start; }
+        .k-col { background: var(--border-light); border-radius: var(--radius-lg); padding: 16px; min-height: 500px; display: flex; flex-direction: column; gap: 16px; background: rgba(226, 232, 240, 0.4);}
+        .k-header { font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 4px;}
+        .k-header span { background: var(--bg-card); color: var(--text-main); padding: 2px 8px; border-radius: 12px; font-size: 12px; box-shadow: var(--shadow-sm); }
+        .k-card { background: var(--bg-card); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); border-left: 4px solid var(--info); border-top: 1px solid var(--border-light); border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); cursor: pointer; transition: 0.2s; }
+        .k-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .k-card.p1 { border-left-color: var(--danger); }
+        .k-card.p2 { border-left-color: var(--warning); }
+        .k-card.resolved { border-left-color: var(--success); opacity: 0.8; box-shadow: none; background: #f8fafc;}
+        .k-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text-main); line-height: 1.4;}
+        .k-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; font-weight: 500;}
+        .k-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700;}
+        .k-meta.alert { color: var(--danger); background: var(--danger-bg); padding: 6px 10px; border-radius: 6px; display: inline-block; }
+
+        /* TOAST */
+        .toast { visibility: hidden; min-width: 300px; background-color: var(--sidebar-bg); color: #fff; text-align: center; border-radius: 8px; padding: 16px 24px; position: fixed; z-index: 10000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; font-weight: 600; box-shadow: var(--shadow-lg); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);}
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        /* AI CHATBOT */
+        .chatbot-fab { position: fixed; bottom: 30px; right: 40px; width: 64px; height: 64px; background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-dark)); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 24px rgba(0, 180, 216, 0.4); cursor: pointer; z-index: 9999; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .chatbot-fab:hover { transform: scale(1.1); }
+        .chatbot-fab svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .chatbot-window { position: fixed; bottom: 110px; right: 40px; width: 380px; height: 550px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); box-shadow: 0 15px 35px rgba(0,0,0,0.2); display: flex; flex-direction: column; z-index: 9999; overflow: hidden; transform: translateY(20px) scale(0.95); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); transform-origin: bottom right;}
+        .chatbot-window.active { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+
+        .cb-header { background: var(--bg-dark-card); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-dark); }
+        .cb-title { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; }
+        .cb-title .dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
+        .cb-close { background: transparent; border: none; color: var(--text-dark-muted); cursor: pointer; transition: 0.2s; }
+        .cb-close:hover { color: white; transform: rotate(90deg); }
+
+        .cb-body { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: var(--bg-page); }
+        .chat-msg { display: flex; flex-direction: column; max-width: 85%; }
+        .chat-msg.bot { align-self: flex-start; }
+        .chat-msg.user { align-self: flex-end; }
+
+        .cb-bubble { padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; font-weight: 500; }
+        .chat-msg.bot .cb-bubble { background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-main); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+        .chat-msg.user .cb-bubble { background: var(--brand-blue); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(0,180,216,0.2); }
+
+        .cb-time { font-size: 11px; color: var(--text-muted); margin-top: 6px; font-weight: 600; padding: 0 4px;}
+        .chat-msg.user .cb-time { text-align: right; }
+
+        .cb-footer { padding: 16px; background: var(--bg-card); border-top: 1px solid var(--border-light); display: flex; gap: 12px; align-items: center; }
+        .cb-input { flex: 1; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 24px; font-size: 14px; font-family: inherit; font-weight: 500; outline: none; background: var(--bg-page); transition: 0.2s; }
+        .cb-input:focus { border-color: var(--brand-blue); background: var(--bg-card); }
+        .cb-send { background: var(--brand-blue); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;}
+        .cb-send:hover { background: var(--brand-blue-dark); transform: scale(1.05); }
+
+        @media(max-width: 600px) {
+            .chatbot-window { width: calc(100vw - 40px); right: 20px; bottom: 100px; }
+            .chatbot-fab { right: 20px; bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand">Connect<span>X</span></div>
+        <div class="nav-menu">
+            <div class="nav-label">Enterprise Console</div>
+            <div class="nav-item active" onclick="switchTab('tab-prebuilt', this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Integration Library</div>
+            <div class="nav-item" onclick="switchTab('tab-lab', this)"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Lab Validation</div>
+            <div class="nav-item" onclick="switchTab('tab-test', this)"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Automated Testing</div>
+            <div class="nav-item" onclick="switchTab('tab-monitor', this)"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Agentic Monitor</div>
+            <div class="nav-item" onclick="switchTab('tab-support', this)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M21 8a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Support & Incidents</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="global-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input type="text" placeholder="Search connectors, endpoints..."></div>
+            <div class="topbar-right">
+                <div class="env-badge"><div class="dot"></div> Prod Env</div>
+                <div class="user-profile" onclick="showToast('Opening Account Settings')">
+                    <div class="up-text"><div class="up-name">Alex Mercer</div><div class="up-role">CTO</div></div>
+                    <div class="avatar">AM</div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- TAB 1: INTEGRATION LIBRARY -->
+        <div id="tab-prebuilt" class="tab-pane active">
+            <div class="section-header">
+                <div class="section-title"><h1>Integration Library</h1><p>Manage your purchased ConnectX integrations, deployment status, and expand your ecosystem.</p></div>
+            </div>
+
+            <div class="exec-widget-row">
+                <div class="exec-widget" style="border-bottom: 4px solid var(--brand-blue);"><div class="ew-info"><h3 style="color:var(--brand-blue-dark)">Total Connectors Purchased</h3><div class="val">24</div></div></div>
+                <div class="exec-widget" style="border-bottom: 4px solid var(--success);"><div class="ew-info"><h3>Total Connectors Deployed</h3><div class="val">18</div></div></div>
+                <div class="exec-widget" style="border-bottom: 4px solid var(--warning);"><div class="ew-info"><h3>Total Connectors in Progress</h3><div class="val">6</div></div></div>
+            </div>
+
+            <div class="controls-row">
+                <div class="toggle-switch">
+                    <div class="toggle-btn active" id="btn-purchased" onclick="toggleMarketplace(false)">View Purchased (24)</div>
+                    <div class="toggle-btn" id="btn-market" onclick="toggleMarketplace(true)">Marketplace (1,058+)</div>
+                </div>
+                <div class="market-toolbar" id="market-tools">
+                    <input type="text" class="filter-input" id="market-search" placeholder="Search marketplace..." oninput="filterMarketplace()">
+                    <select class="filter-select" id="market-cat" onchange="filterMarketplace()"><option value="All">All Categories</option><option value="SIEM">SIEM</option><option value="EDR">EDR</option><option value="Vuln Mgmt">Vuln Mgmt</option></select>
+                </div>
+            </div>
+
+            <div class="grid-responsive" id="connector-grid"></div>
+            <div id="market-wrapper" style="display: none;"><div class="grid-responsive" id="marketplace-grid"></div><div class="pagination-container" id="market-pagination"></div></div>
+        </div>
+
+        <!-- TAB 2: LAB VALIDATION -->
+        <div id="tab-lab" class="tab-pane theme-dark-tab">
+            <div class="section-header">
+                <div class="section-title"><h1>Lab Validation Environments</h1><p>Manage Active Live/Virtual Sandboxes, or provision new testing environments from our 520+ system library.</p></div>
+            </div>
+
+            <div class="exec-widget-row">
+                <div class="exec-widget"><div class="ew-info"><h3>Available Systems in Lab</h3><div class="val">524</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Active Virtual Sandboxes</h3><div class="val">6</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Active Live Sandboxes</h3><div class="val">2</div></div></div>
+            </div>
+
+            <div class="controls-row">
+                <div class="toggle-switch">
+                    <div class="toggle-btn active" id="btn-active-labs" onclick="toggleLabView(false)">Active Sandboxes (8)</div>
+                    <div class="toggle-btn" id="btn-avail-labs" onclick="toggleLabView(true)">System Library (524)</div>
+                </div>
+                <button class="btn btn-primary" onclick="showToast('Initiating Provisioning UI...')">Provision New Sandbox</button>
+            </div>
+
+            <div class="grid-responsive" id="lab-active-grid"></div>
+            <div id="lab-library-wrapper" style="display: none;"><div class="grid-responsive" id="lab-library-grid"></div><div class="pagination-container" id="lab-pagination"></div></div>
+        </div>
+
+        <!-- TAB 3: AUTOMATED TESTING -->
+        <div id="tab-test" class="tab-pane">
+            <div class="section-header" style="margin-bottom:24px;">
+                <div class="section-title"><h1>Automated Regression Testing & Reports</h1><p>Continuous integration validation ensuring partner APIs remain structurally compatible.</p></div>
+            </div>
+
+            <div class="exec-widget-row">
+                <div class="exec-widget" style="border-bottom:4px solid var(--success);"><div class="ew-info"><h3 style="color:var(--success)">Global API Pass Rate</h3><div class="val">99.4%</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>API Endpoints Tested (30d)</h3><div class="val">14,250</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Schema Drifts Prevented</h3><div class="val">12</div></div></div>
+            </div>
+
+            <div class="report-gen-box">
+                <h3 style="font-size:16px; margin-bottom:20px; font-weight:800;">Generate Custom Testing Report</h3>
+                <div class="report-gen-grid">
+                    <div class="input-group">
+                        <label>Select Connectors</label>
+                        <div class="custom-select-wrapper" id="custom-multi-select">
+                            <div class="custom-select-display" onclick="document.getElementById('custom-select-dropdown').classList.toggle('show');">
+                                <span id="select-count-text">All Deployed Connectors (18 Selected)</span>
+                            </div>
+                            <div class="custom-select-dropdown" id="custom-select-dropdown">
+                                <label class="custom-select-option"><input type="checkbox" checked onchange="updateSelectCount()"> Splunk Enterprise</label>
+                                <label class="custom-select-option"><input type="checkbox" checked onchange="updateSelectCount()"> ServiceNow ITSM</label>
+                                <label class="custom-select-option"><input type="checkbox" checked onchange="updateSelectCount()"> CrowdStrike Falcon</label>
+                                <label class="custom-select-option"><input type="checkbox" checked onchange="updateSelectCount()"> Palo Alto Cortex</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group"><label>Timeline Range</label><select><option>Last 30 Days</option><option>Q1 2026</option></select></div>
+                    <button class="btn btn-primary" style="height: 46px; padding: 0 32px;" onclick="showToast('Generating highly detailed PDF report...')">Download PDF</button>
+                </div>
+            </div>
+
+            <div class="test-table-wrapper">
+                <table class="test-table">
+                    <thead><tr><th>Integration Target</th><th>Current Status</th><th>30-Day Stability Trend</th><th>CI/CD Release Gate</th><th>Actions</th></tr></thead>
+                    <tbody id="test-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: AGENTIC MONITOR -->
+        <div id="tab-monitor" class="tab-pane theme-dark-tab">
+            <div class="section-header">
+                <div class="section-title"><h1>Agentic AI Telemetry</h1><p>Real-time endpoint health and auto-remediation statistics. Powered by ConnectX AI.</p></div>
+                <button class="btn btn-outline" onclick="showToast('Opening Alert Rules Configurator...')">Configure Alert Rules</button>
+            </div>
+
+            <div class="exec-widget-row">
+                <div class="exec-widget"><div class="ew-info"><h3>Connectors Monitored</h3><div class="val">5</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Endpoints Tracked</h3><div class="val">58</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Auto-Patched (30d)</h3><div class="val">9</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Auto-Patch Success</h3><div class="val">82%</div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Downtime Prevented</h3><div class="val">47h</div></div></div>
+            </div>
+
+            <div class="mon-split">
+                <div class="sla-card">
+                    <h3 style="position:absolute; top:24px; left:24px; font-size:14px; font-weight:800; color:var(--text-dark-muted); text-transform:uppercase; letter-spacing:1px;">Endpoint Health</h3>
+                    <div class="donut-wrapper">
+                        <div class="donut-chart"><div class="donut-inner"><div style="font-size:42px; font-weight:800; color:white; line-height:1;">58</div><div style="font-size:12px; font-weight:700; color:var(--text-dark-muted); text-transform:uppercase; margin-top:6px;">Total Endpoints</div></div></div>
+                        <ul class="chart-legend">
+                            <li onclick="showToast('Filtering: 51 Healthy')"><span style="display:flex; align-items:center; gap:10px; font-weight:600;"><div style="background:var(--success); width:10px; height:10px; border-radius:50%; box-shadow:0 0 8px var(--success)"></div> Healthy</span><strong style="color:white; font-size:15px;">51</strong></li>
+                            <li onclick="showToast('Filtering: 4 Pending')"><span style="display:flex; align-items:center; gap:10px; font-weight:600;"><div style="background:var(--warning); width:10px; height:10px; border-radius:50%; box-shadow:0 0 8px var(--warning)"></div> Pending review</span><strong style="color:white; font-size:15px;">4</strong></li>
+                            <li onclick="showToast('Filtering: 2 Broken')"><span style="display:flex; align-items:center; gap:10px; font-weight:600;"><div style="background:var(--danger); width:10px; height:10px; border-radius:50%; box-shadow:0 0 8px var(--danger)"></div> Broken</span><strong style="color:white; font-size:15px;">2</strong></li>
+                            <li onclick="showToast('Filtering: 1 Auto-repairing')"><span style="display:flex; align-items:center; gap:10px; font-weight:600;"><div style="background:var(--brand-blue); width:10px; height:10px; border-radius:50%; box-shadow:0 0 8px var(--brand-blue)"></div> Auto-repairing</span><strong style="color:white; font-size:15px;">1</strong></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <div class="mon-box-grid" id="monitor-box-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MONITOR MODAL -->
+        <div class="modal-overlay" id="monitor-modal" onclick="closeModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <button class="modal-close" onclick="closeModal(true)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                <div style="display:flex; align-items:center; gap:20px; margin-bottom:32px; flex-wrap:wrap;">
+                    <div class="vendor-logo dark-mode-logo" id="mod-logo" style="width:64px; height:64px; padding:10px;"></div>
+                    <div><h2 style="font-size:24px; font-weight:800; letter-spacing:-0.5px; margin-bottom:6px;" id="mod-title">Name</h2><div id="mod-status" style="font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px;">Status</div></div>
+                </div>
+                <div style="height: 1px; background:var(--border-dark); margin-bottom: 32px;"></div>
+                <h3 style="font-size:13px; color:var(--text-dark-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Live Telemetry & Polling Data</h3>
+                <div class="modal-grid">
+                    <div class="md-stat"><div class="md-label">Polling Engine State</div><div class="md-val" id="mod-state" style="color:white;">--</div></div>
+                    <div class="md-stat"><div class="md-label">Avg API Latency (1h)</div><div class="md-val" id="mod-lat" style="color:white;">--</div></div>
+                    <div class="md-stat"><div class="md-label">Last Successful Sync</div><div class="md-val" id="mod-sync" style="color:white;">--</div></div>
+                    <div class="md-stat"><div class="md-label">Events Processed (24h)</div><div class="md-val" id="mod-events" style="color:white;">--</div></div>
+                </div>
+                <button class="btn btn-outline" style="width:100%; margin-top:32px; height:50px; font-size:15px;" onclick="showToast('Redirecting to full APM Logs...')">View Full APM Logs</button>
+            </div>
+        </div>
+
+        <!-- TAB 5: SUPPORT -->
+        <div id="tab-support" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title"><h1>Support & Incidents</h1><p>Track engineering escalations, L3 resolutions, and ConnectX incident SLAs.</p></div>
+                <button class="btn btn-primary" style="background:var(--brand-orange);" onclick="showToast('Opening Ticket Form...')">Open New Ticket</button>
+            </div>
+
+            <div class="exec-widget-row">
+                <div class="exec-widget"><div class="ew-info"><h3>Mean Time To Resolution</h3><div class="val">4h 12m <span style="font-size:12px; color:var(--success); background:var(--success-bg); padding:4px 10px; border-radius:20px; margin-left:12px; font-weight:700;">⬇ 22% vs Last Mo</span></div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Active Priority Tickets</h3><div class="val" style="color:var(--danger)">2 <span style="font-size:14px; color:var(--text-muted); font-weight:600; margin-left:8px;">P1 / P2</span></div></div></div>
+                <div class="exec-widget"><div class="ew-info"><h3>Global SLA Compliance</h3><div class="val" style="color:var(--success);">99.9% <span style="font-size:14px; color:var(--text-muted); font-weight:600; margin-left:8px;">Met</span></div></div></div>
+            </div>
+
+            <div class="kanban-board">
+                <div class="k-col"><div class="k-header">Open / To Do <span>1</span></div><div class="k-card p2"><div class="k-title">Zscaler Rate Limit Failures</div><div class="k-desc">Engine occasionally hits 429 Too Many Requests during peak high-volume hours. Adjusting polling backoff.</div><div class="k-meta"><span style="color:var(--warning)">P2 - High</span><span>2h ago</span></div></div></div>
+                <div class="k-col"><div class="k-header">In Progress (L2/L3) <span>2</span></div><div class="k-card p1" style="border-width: 2px; border-color: var(--danger);"><div class="k-title">ServiceNow API v3 Drift</div><div class="k-desc">Schema drift detected. Incident payload creation failing on custom fields. Mapping updates in progress.</div><div class="k-meta alert" style="margin-bottom: 16px;">SLA Breach Warning</div><button class="btn btn-outline" style="width:100%; border-color:var(--danger); color:var(--danger); font-size:13px; padding:8px;" onclick="showToast('Escalated')">Escalate to L3 Engineering</button></div><div class="k-card p3"><div class="k-title">Datadog APM Log Scoping</div><div class="k-desc">Requirement gathering for custom metric ingestion via ConnectX runtime agent.</div><div class="k-meta"><span style="color:var(--brand-blue)">P3 - Normal</span><span>1d ago</span></div></div></div>
+                <div class="k-col"><div class="k-header">Resolved (Last 7 Days) <span>2</span></div><div class="k-card resolved"><div class="k-title">Splunk Auth Token Expiry Bug</div><div class="k-meta"><span style="color:var(--success)">Resolved</span><span>MTTR: 1h 45m</span></div></div><div class="k-card resolved"><div class="k-title">AWS GovCloud Region Support</div><div class="k-meta"><span style="color:var(--success)">Resolved</span><span>MTTR: 2d 4h</span></div></div></div>
+            </div>
+        </div>
+
+        <div id="toast-msg" class="toast">Action completed successfully</div>
+
+        <!-- AI CHATBOT COMPONENTS -->
+        <div class="chatbot-fab" onclick="toggleChatbot()">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
+
+        <div class="chatbot-window" id="chatbot-window">
+            <div class="cb-header">
+                <div class="cb-title"><div class="dot"></div> ConnectX AI Copilot</div>
+                <button class="cb-close" onclick="toggleChatbot()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="cb-body" id="cb-body">
+                <div class="chat-msg bot">
+                    <div class="cb-bubble">Hello Alex! I am your ConnectX AI Copilot. I monitor your 18 deployed integrations.</div>
+                    <div class="cb-time">Just now</div>
+                </div>
+                <div class="chat-msg bot">
+                    <div class="cb-bubble">I noticed a schema drift warning on the <strong>ServiceNow ITSM</strong> connector. Would you like me to auto-map the new custom fields or open an escalation ticket?</div>
+                    <div class="cb-time">Just now</div>
+                </div>
+            </div>
+            <div class="cb-footer">
+                <input type="text" class="cb-input" id="cb-input" placeholder="Ask ConnectX AI..." onkeypress="handleChatEnter(event)">
+                <button class="cb-send" onclick="sendChatMessage()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const getLogo = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+        function showToast(msg) { const t=document.getElementById("toast-msg"); t.innerText=msg; t.className="toast show"; setTimeout(()=>{t.className=t.className.replace("show","");}, 3000); }
+        function switchTab(t, e) { document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active')); e.classList.add('active'); document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active')); document.getElementById(t).classList.add('active'); }
+
+        // 1. PURCHASED TAB (ALL 24)
+        const purchased = [
+            { n:"Splunk Enterprise", c:"SIEM", d:"splunk.com", s:"Deployed" }, { n:"CrowdStrike Falcon", c:"EDR", d:"crowdstrike.com", s:"Deployed" },
+            { n:"ServiceNow ITSM", c:"Ticketing", d:"servicenow.com", s:"In Progress" }, { n:"Palo Alto Cortex", c:"SOAR", d:"paloaltonetworks.com", s:"Deployed" },
+            { n:"AWS Security Hub", c:"CSPM", d:"aws.amazon.com", s:"Deployed" }, { n:"Okta Identity", c:"IAM", d:"okta.com", s:"Deployed" },
+            { n:"Zscaler Internet", c:"SSE", d:"zscaler.com", s:"In Progress" }, { n:"Datadog Security", c:"Observability", d:"datadoghq.com", s:"In Progress" },
+            { n:"Microsoft Sentinel", c:"SIEM", d:"microsoft.com", s:"Deployed" }, { n:"Tenable.io", c:"Vuln Mgmt", d:"tenable.com", s:"Deployed" },
+            { n:"CyberArk PAM", c:"Identity", d:"cyberark.com", s:"Deployed" }, { n:"Google Cloud SCC", c:"CSPM", d:"cloud.google.com", s:"Deployed" },
+            { n:"Rapid7 InsightVM", c:"Vuln Mgmt", d:"rapid7.com", s:"In Progress" }, { n:"Proofpoint", c:"Email Sec", d:"proofpoint.com", s:"Deployed" },
+            { n:"Mimecast", c:"Email Sec", d:"mimecast.com", s:"Deployed" }, { n:"Ping Identity", c:"IAM", d:"pingidentity.com", s:"Deployed" },
+            { n:"Sophos Endpoint", c:"EDR", d:"sophos.com", s:"In Progress" }, { n:"Slack Enterprise", c:"Comms", d:"slack.com", s:"Deployed" },
+            { n:"Atlassian Jira", c:"Ticketing", d:"atlassian.com", s:"Deployed" }, { n:"Zoom Admin", c:"Comms", d:"zoom.us", s:"Deployed" },
+            { n:"Wiz Cloud", c:"CSPM", d:"wiz.io", s:"In Progress" }, { n:"Trellix", c:"EDR", d:"trellix.com", s:"Deployed" },
+            { n:"SailPoint", c:"IAM", d:"sailpoint.com", s:"Deployed" }, { n:"Fortinet", c:"Network", d:"fortinet.com", s:"Deployed" }
+        ];
+        const preGrid = document.getElementById('connector-grid');
+        purchased.forEach(d => { const sClass = (d.s === 'In Progress') ? 'pill-requested' : 'pill-deployed'; preGrid.innerHTML += `<div class="connector-card"><div class="cc-header"><div class="vendor-logo"><img src="${getLogo(d.d)}"></div><div class="status-pill ${sClass}">${d.s}</div></div><div class="cc-title">${d.n}</div><div class="cc-cat">${d.c}</div></div>`; });
+
+        // MARKETPLACE
+        const market = [ 
+            { n:"IBM QRadar", c:"SIEM", d:"ibm.com" }, { n:"Qualys", c:"Vuln Mgmt", d:"qualys.com" }, { n:"Arctic Wolf", c:"XDR", d:"arcticwolf.com" }, { n:"Duo Security", c:"IAM", d:"duo.com" }, 
+            { n:"BeyondTrust", c:"IAM", d:"beyondtrust.com" }, { n:"Snyk", c:"CSPM", d:"snyk.io" }, { n:"Darktrace", c:"MDR", d:"darktrace.com" }, { n:"Varonis", c:"Data Sec", d:"varonis.com" },
+            { n:"Orca Security", c:"CSPM", d:"orca.security" }, { n:"Trend Micro", c:"Network", d:"trendmicro.com" }, { n:"Check Point", c:"Network", d:"checkpoint.com" }, { n:"Forcepoint", c:"Email Sec", d:"forcepoint.com" },
+            { n:"Cisco Fortify", c:"Network", d:"cisco.com" }, { n:"SentinelOne", c:"XDR", d:"sentinelone.com" }, { n:"Auth0", c:"IAM", d:"auth0.com" }, { n:"Imperva", c:"Data Sec", d:"imperva.com" }
+        ];
+        let mktPage = 1;
+        function renderMarket() {
+            const mktGrid = document.getElementById('marketplace-grid'); mktGrid.innerHTML = '';
+            let items = mktPage === 1 ? market.slice(0, 16) : market.slice(0, 4);
+            items.forEach(d => { mktGrid.innerHTML += `<div class="connector-card"><div class="cc-header"><div class="vendor-logo"><img src="${getLogo(d.d)}"></div></div><div class="cc-title">${d.n}</div><div class="cc-cat" style="color:var(--brand-blue); margin-bottom:16px;">${d.c}</div><button class="btn btn-outline" style="width:100%; border-color:var(--brand-blue); color:var(--brand-blue-dark);" onclick="showToast('Connector Requested')">Request Connector</button></div>`; });
+            document.getElementById('market-pagination').innerHTML = `<div class="page-btn ${mktPage===1?'active':''}" onclick="mktPage=1; renderMarket()">1</div><div class="page-btn ${mktPage===2?'active':''}" onclick="mktPage=2; renderMarket()">2</div><div class="page-btn" onclick="showToast('Loading...')">3</div><div style="margin: 0 10px; color:var(--text-muted); font-weight:600;">...</div><div class="page-btn" onclick="showToast('Loading...')">88</div>`;
+        }
+        renderMarket();
+        function toggleMarketplace(show) { document.getElementById('btn-purchased').classList.toggle('active', !show); document.getElementById('btn-market').classList.toggle('active', show); document.getElementById('connector-grid').style.display = show ? 'none' : 'grid'; document.getElementById('market-wrapper').style.display = show ? 'block' : 'none'; document.getElementById('market-tools').classList.toggle('active', show); }
+
+        // 2. LAB TAB
+        const activeLabs = [
+            { n:"IBM QRadar Target", type:"Live Sandbox", s:"Running", d:"ibm.com" }, { n:"Microsoft Sentinel", type:"Virtual Sandbox", s:"Running", d:"microsoft.com" },
+            { n:"Okta Sandbox", type:"Virtual Sandbox", s:"Syncing", d:"okta.com" }, { n:"Tenable.io Lab", type:"Live Sandbox", s:"Running", d:"tenable.com" },
+            { n:"CyberArk PAM", type:"Virtual Sandbox", s:"Running", d:"cyberark.com" }, { n:"Rapid7 InsightVM", type:"Virtual Sandbox", s:"Syncing", d:"rapid7.com" },
+            { n:"Splunk Target", type:"Live Sandbox", s:"Running", d:"splunk.com" }, { n:"Zscaler Tenant", type:"Virtual Sandbox", s:"Running", d:"zscaler.com" }
+        ];
+        const labGridEle = document.getElementById('lab-active-grid');
+        activeLabs.forEach(d => {
+            const typeCls = d.type.includes('Live') ? 'env-live' : 'env-virtual';
+            labGridEle.innerHTML += `<div class="lab-card"><div class="lc-header"><div style="display:flex; align-items:center; gap:12px;"><div class="vendor-logo sm dark-mode-logo"><img src="${getLogo(d.d)}"></div><div class="cc-title">${d.n}</div></div><div class="env-type-badge ${typeCls}">${d.type.includes('Live') ? '⚡' : '💻'} ${d.type}</div></div><div class="lc-details"><div class="lc-row">Status <span class="lc-status"><div class="dot"></div> ${d.s}</span></div></div><button class="btn btn-outline" style="width:100%;" onclick="showToast('Managing: ${d.n}')">Manage</button></div>`;
+        });
+
+        const labLib = [ 
+            {n:"Ping Identity", c:"IAM", d:"pingidentity.com"}, {n:"Sophos", c:"EDR", d:"sophos.com"}, {n:"Slack", c:"Comms", d:"slack.com"}, {n:"Jira", c:"Ticketing", d:"atlassian.com"},
+            {n:"Wiz", c:"CSPM", d:"wiz.io"}, {n:"Trellix", c:"EDR", d:"trellix.com"}, {n:"SailPoint", c:"IAM", d:"sailpoint.com"}, {n:"Fortinet", c:"Network", d:"fortinet.com"},
+            {n:"Duo Security", c:"IAM", d:"duo.com"}, {n:"Datadog", c:"Observability", d:"datadoghq.com"}, {n:"Varonis", c:"Data Sec", d:"varonis.com"}, {n:"Splunk", c:"SIEM", d:"splunk.com"},
+            {n:"Zscaler", c:"SSE", d:"zscaler.com"}, {n:"Mimecast", c:"Email Sec", d:"mimecast.com"}, {n:"BeyondTrust", c:"IAM", d:"beyondtrust.com"}, {n:"Palo Alto", c:"SOAR", d:"paloaltonetworks.com"}
+        ];
+        let labPage = 1;
+        function renderLabLib() {
+            const llGrid = document.getElementById('lab-library-grid'); llGrid.innerHTML = '';
+            let items = labPage === 1 ? labLib.slice(0, 16) : labLib.slice(0, 4);
+            items.forEach(d => { llGrid.innerHTML += `<div class="connector-card"><div class="cc-header"><div class="vendor-logo"><img src="${getLogo(d.d)}"></div></div><div class="cc-title">${d.n}</div><div class="cc-cat" style="color:var(--brand-blue); margin-bottom:16px;">${d.c}</div><button class="btn btn-outline" style="width:100%;" onclick="showToast('Provisioning ${d.n} Sandbox...')">Spin Up Sandbox</button></div>`; });
+            document.getElementById('lab-pagination').innerHTML = `<div class="page-btn ${labPage===1?'active':''}" onclick="labPage=1; renderLabLib()">1</div><div class="page-btn ${labPage===2?'active':''}" onclick="labPage=2; renderLabLib()">2</div><div style="margin: 0 10px; color:var(--text-dark-muted); font-weight:600;">...</div><div class="page-btn" onclick="showToast('Loading page 44...')">44</div>`;
+        }
+        renderLabLib();
+        function toggleLabView(show) { document.getElementById('btn-active-labs').classList.toggle('active', !show); document.getElementById('btn-avail-labs').classList.toggle('active', show); document.getElementById('lab-active-grid').style.display = show ? 'none' : 'grid'; document.getElementById('lab-library-wrapper').style.display = show ? 'block' : 'none'; }
+
+        // 3. TESTING
+        const tb = document.getElementById('test-table-body');
+        [{n:"Splunk Enterprise v9", c:"SIEM Mapping", d:"splunk.com", pass:true}, {n:"ServiceNow ITSM", c:"Incident API v3", d:"servicenow.com", pass:false}].forEach(d => { 
+            const statusHtml = d.pass ? `<span style="color:var(--success); font-weight:800;"><div class="dot" style="display:inline-block; margin-right:8px; background:var(--success)"></div> Successfully Tested</span>` : `<span style="color:var(--danger); font-weight:800;"><div class="dot" style="display:inline-block; margin-right:8px; background:var(--danger)"></div> Issues Found</span><div class="drift-tag">🚨 API Schema Drift</div>`;
+            tb.innerHTML += `<tr class="${d.pass?'':'row-fail'}"><td><div style="display:flex; align-items:center; gap:16px;"><div class="vendor-logo sm"><img src="${getLogo(d.d)}"></div><div><strong style="font-size:15px; color:var(--text-main);">${d.n}</strong><br><span style="color:var(--text-muted); font-size:13px; font-weight:600;">${d.c}</span></div></div></td><td>${statusHtml}</td><td><svg viewBox="0 0 100 24" style="width:90px;height:24px;"><path fill="none" stroke="${d.pass?'var(--success)':'var(--danger)'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="${d.pass?'M0,12 L20,12 L40,8 L60,14 L80,10 L100,12':'M0,12 L20,12 L40,8 L60,20 L80,24 L100,24'}"></path></svg></td><td><div style="font-weight:700; color:${d.pass?'var(--text-muted)':'var(--danger)'}; display:flex; align-items:center; gap:8px;"><div style="width:36px; height:20px; border-radius:10px; position:relative; background:${d.pass?'var(--success)':'var(--danger)'};"><div style="content:''; position:absolute; right:2px; top:2px; width:16px; height:16px; background:white; border-radius:50%;"></div></div> ${d.pass?'Active':'Blocked'}</div></td><td><button class="btn btn-outline" style="padding:6px 12px; font-size:13px;">View Logs</button></td></tr>`; 
+        });
+        function updateSelectCount() { const cbs = document.querySelectorAll('#custom-select-dropdown input[type="checkbox"]'); let c = 0; cbs.forEach(cb => { if(cb.checked) c++; }); document.getElementById('select-count-text').innerText = c === 0 ? "Select Connectors..." : `${c} Connectors Selected`; }
+
+        // 4. MONITOR
+        const monData = [ 
+            {n:"Splunk Ent.", d:"splunk.com", s:"Healthy", l:"42ms", t:"Just now", state:"Active Polling", e:"3.2M", hl: 100}, 
+            {n:"ServiceNow", d:"servicenow.com", s:"Degraded", l:"850ms", t:"5m ago", state:"Backoff Retry", e:"450K", hl: 30}, 
+            {n:"CrowdStrike", d:"crowdstrike.com", s:"Healthy", l:"28ms", t:"1m ago", state:"Webhook Active", e:"12.1M", hl: 100}, 
+            {n:"AWS Sec Hub", d:"aws.amazon.com", s:"Healthy", l:"65ms", t:"Just now", state:"Active Push", e:"8.5M", hl: 100}, 
+            {n:"Zscaler", d:"zscaler.com", s:"Warning", l:"120ms", t:"2m ago", state:"Token Refresh Error", e:"900K", hl: 60} 
+        ];
+        const mbGrid = document.getElementById('monitor-box-grid');
+        monData.forEach(d => { let cls = "", col = "var(--success)"; if(d.s==="Degraded"){cls="degraded"; col="var(--danger)";} if(d.s==="Warning"){cls="warning"; col="var(--warning)";}
+            const dataStr = encodeURIComponent(JSON.stringify(d));
+            mbGrid.innerHTML += `
+            <div class="mon-box ${cls}" onclick="openModal('${dataStr}')">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:12px;">
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div class="vendor-logo sm dark-mode-logo"><img src="${getLogo(d.d)}"></div>
+                            <div style="font-size:15px; font-weight:700; color:white; line-height:1.2;">${d.n}</div>
+                        </div>
+                        <div class="agentic-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> AI Monitored</div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-dark-muted); font-weight:500;">
+                        <span>Lat: <strong style="color:white">${d.l}</strong></span><span>Sync: <strong style="color:white">${d.t}</strong></span>
+                    </div>
+                    <div class="health-bar-container"><div class="health-bar-fill" style="width: ${d.hl}%; background: ${col}"></div></div>
+                </div>
+                <div style="font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px; margin-top:16px; color:${col}">
+                    <div class="dot" style="background:${col}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 8px ${col};"></div> ${d.s}
+                </div>
+            </div>`;
+        });
+        const modal = document.getElementById('monitor-modal');
+        function openModal(dataStr) {
+            const d = JSON.parse(decodeURIComponent(dataStr));
+            let col = "var(--success)"; if(d.s === "Degraded") col = "var(--danger)"; if(d.s === "Warning") col = "var(--warning)";
+            document.getElementById('mod-logo').innerHTML = `<img src="${getLogo(d.d)}">`;
+            document.getElementById('mod-title').innerText = d.n;
+            document.getElementById('mod-status').innerHTML = `<div style="background:${col}; width:10px; height:10px; border-radius:50%; box-shadow:0 0 10px ${col}"></div><span style="color:${col}">${d.s}</span>`;
+            document.getElementById('mod-state').innerText = d.state; document.getElementById('mod-state').style.color = (d.s === "Healthy") ? "white" : col;
+            document.getElementById('mod-lat').innerText = d.l; document.getElementById('mod-lat').style.color = (d.s === "Degraded") ? "var(--danger)" : "white";
+            document.getElementById('mod-sync').innerText = d.t; document.getElementById('mod-events').innerText = d.e;
+            modal.classList.add('active');
+        }
+        function closeModal(e) { if(e === true || e.target === modal) { modal.classList.remove('active'); } }
+
+        // AI CHATBOT LOGIC
+        const chatWin = document.getElementById('chatbot-window');
+        const chatInput = document.getElementById('cb-input');
+        const chatBody = document.getElementById('cb-body');
+
+        function toggleChatbot() {
+            chatWin.classList.toggle('active');
+            if(chatWin.classList.contains('active')) {
+                setTimeout(() => chatInput.focus(), 300);
+            }
+        }
+
+        function handleChatEnter(e) {
+            if(e.key === 'Enter') sendChatMessage();
+        }
+
+        function sendChatMessage() {
+            const text = chatInput.value.trim();
+            if(!text) return;
+
+            // Add user message
+            chatBody.innerHTML += `
+                <div class="chat-msg user">
+                    <div class="cb-bubble">${text}</div>
+                    <div class="cb-time">Just now</div>
+                </div>
+            `;
+            chatInput.value = '';
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            // Mock AI typing delay
+            setTimeout(() => {
+                let aiResponse = "I've logged that request. ConnectX AI is analyzing the APM logs now and will provide a mitigation path shortly.";
+                if(text.toLowerCase().includes('lab') || text.toLowerCase().includes('sandbox')) {
+                    aiResponse = "I can help spin up a new lab sandbox for you. Which system do you need from the 524 available in the library?";
+                } else if(text.toLowerCase().includes('drift') || text.toLowerCase().includes('servicenow')) {
+                    aiResponse = "I have initiated the auto-mapping routine for the ServiceNow v3 custom fields. The schema should be realigned in approximately 2 minutes.";
+                } else if(text.toLowerCase().includes('ticket') || text.toLowerCase().includes('escalate')) {
+                    aiResponse = "Ticket escalated to L3 Engineering. They will review the ConnectX runtime agent telemetry and respond within the 4h SLA.";
+                }
+
+                chatBody.innerHTML += `
+                    <div class="chat-msg bot">
+                        <div class="cb-bubble">${aiResponse}</div>
+                        <div class="cb-time">Just now</div>
+                    </div>
+                `;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

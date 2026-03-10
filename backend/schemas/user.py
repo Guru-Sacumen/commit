@@ -42,7 +42,11 @@ class UserCreateRequest(BaseModel):
     role: RoleEnum = RoleEnum.MEMBER
 
 
-class UserOut(UserBase):
+class UserOut(BaseModel):
+    # Output should tolerate legacy/demo domains (e.g. *.local).
+    # Keep strict EmailStr validation for input schemas only.
+    email: str
+    full_name: Optional[str] = None
     id: str
     created_at: datetime
     role: RoleEnum

@@ -120,7 +120,7 @@ export default function LoginPage() {
     
     // Prefer tenant from JWT payload to avoid stale/default tenant mismatch
     const tokenPayload = decodeTokenPayload(token);
-    const tenantFromToken = tokenPayload?.tenant_id;
+    const tenantFromToken = tokenPayload?.tenant_id || tokenPayload?.tid;
     if (tenantFromToken) {
       localStorage.setItem('connectx_tenant_id', tenantFromToken);
     }
@@ -144,6 +144,9 @@ export default function LoginPage() {
       if (me.email) userData.email = me.email;
       if (me.full_name) userData.full_name = me.full_name;
       if (me.superadmin !== undefined) userData.superadmin = me.superadmin;
+      if (me.tenant_id) {
+        localStorage.setItem('connectx_tenant_id', me.tenant_id);
+      }
     }
 
     // Fallback tenant id from env (only if JWT did not include one)

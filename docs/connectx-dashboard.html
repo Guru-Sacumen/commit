@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConnectX - Pre-Built Connectors</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --purple-hover: #6d28d9;
+    --orange: #f97316;
+    --green: #16a34a;
+    --bg: #f8f7fc;
+    --white: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --text-sm: #4b5563;
+    --sidebar-w: 240px;
+    --topbar-h: 56px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    min-height: var(--topbar-h);
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: #1e293b;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text { font-weight: 700; font-size: 17px; color: var(--text); }
+
+  .sidebar-nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--purple-light); color: var(--purple); }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+
+  .user-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0;
+  }
+  .user-avatar {
+    width: 32px; height: 32px;
+    background: var(--purple);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-info { line-height: 1.3; }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-role { font-size: 11px; color: var(--text-muted); }
+
+  .sign-out {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer; padding: 4px 0;
+  }
+  .sign-out:hover { color: var(--text); }
+  .sign-out svg { width: 14px; height: 14px; }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: var(--sidebar-w); right: 0;
+    height: var(--topbar-h);
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    z-index: 50;
+  }
+
+  .topbar-company { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .notif-btn {
+    position: relative;
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--white);
+    cursor: pointer;
+  }
+  .notif-badge {
+    position: absolute;
+    top: -5px; right: -5px;
+    background: var(--purple);
+    color: #fff;
+    font-size: 10px; font-weight: 700;
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+  }
+
+  .profile-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+
+  /* ── Main Content ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    margin-top: var(--topbar-h);
+    flex: 1;
+    padding: 28px 28px 60px;
+    max-width: 1100px;
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .page-subtitle { font-size: 14px; color: var(--text-muted); }
+
+  .btn-request {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .btn-request:hover { background: var(--purple-hover); }
+
+  /* ── Section ── */
+  .section { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+
+  .section-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .section-title svg { width: 18px; height: 18px; }
+
+  /* ── Subsection labels ── */
+  .sub-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .06em;
+    margin-bottom: 12px;
+    margin-top: 4px;
+  }
+  .sub-label.ready { color: var(--purple); }
+  .sub-label.building { color: #d97706; }
+  .sub-label.pending { color: var(--text-muted); }
+  .sub-label svg { width: 13px; height: 13px; }
+
+  /* ── Connector Grid ── */
+  .connector-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .connector-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .connector-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--white);
+    transition: box-shadow .15s;
+    cursor: pointer;
+  }
+  .connector-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+
+  .connector-card-top {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .connector-icon {
+    width: 32px; height: 32px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+
+  .connector-info { flex: 1; min-width: 0; }
+  .connector-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .connector-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+  .connector-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .tag-guide { background: var(--purple-light); color: var(--purple); }
+  .tag-json { background: #f3f4f6; color: #374151; }
+  .tag-update { background: #fff7ed; color: var(--orange); border: 1px solid #fed7aa; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ── Recommended ── */
+  .rec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .rec-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    background: var(--white);
+  }
+  .rec-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .rec-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .rec-name { font-size: 14px; font-weight: 700; }
+  .rec-cat { font-size: 11px; color: var(--text-muted); }
+  .rec-desc { font-size: 12px; color: var(--text-sm); margin-bottom: 14px; line-height: 1.5; }
+  .btn-req-sm {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-req-sm:hover { background: var(--purple-hover); }
+
+  /* ── Search ── */
+  .search-bar {
+    position: relative; margin-bottom: 20px;
+  }
+  .search-bar input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    transition: border .15s;
+  }
+  .search-bar input:focus { border-color: var(--purple); }
+  .search-bar .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted);
+  }
+  .search-bar .search-icon svg { width: 16px; height: 16px; display: block; }
+
+  /* ── Categories ── */
+  .cat-section { margin-bottom: 24px; }
+  .cat-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .cat-label svg { width: 14px; height: 14px; }
+
+  .cat-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    background: #f3f4f6;
+    color: var(--text-sm);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .15s;
+  }
+  .cat-tag:hover { background: var(--purple-light); color: var(--purple); }
+  .cat-tag.active { background: var(--purple); color: #fff; }
+
+  /* ── All Connectors Grid ── */
+  .all-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .all-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    background: var(--white);
+    transition: box-shadow .15s;
+    cursor: pointer;
+  }
+  .all-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.08); }
+  .all-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .all-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .all-name { font-size: 14px; font-weight: 700; }
+  .all-cat { font-size: 11px; color: var(--text-muted); }
+  .all-desc { font-size: 12px; color: var(--text-sm); line-height: 1.5; margin-bottom: 12px; }
+  .all-actions { display: flex; align-items: center; justify-content: space-between; }
+  .use-cases-btn {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 500; color: var(--text-sm);
+    background: none; border: none; cursor: pointer;
+  }
+  .use-cases-btn:hover { color: var(--purple); }
+  .chip-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip {
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 20px; border: 1px solid var(--border);
+    color: var(--text-sm);
+  }
+  .chip.purple { background: var(--purple-light); color: var(--purple); border-color: transparent; }
+  .chip.gray { background: #f3f4f6; }
+
+  .add-connector-btn {
+    width: 100%;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    padding: 9px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background .15s;
+  }
+  .add-connector-btn:hover { background: var(--purple-hover); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: 16px;
+    width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  }
+
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+  .modal-close {
+    position: absolute; top: 20px; right: 20px;
+    width: 28px; height: 28px;
+    border: none; background: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+  }
+  .modal-close:hover { background: var(--bg); }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; }
+
+  .select-box {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px; font-family: inherit;
+    background: #f9fafb;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .use-cases-box {
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 8px;
+  }
+  .use-cases-box .uc-header {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .uc-section-title { font-size: 11px; font-weight: 700; color: var(--text-sm); margin-bottom: 6px; margin-top: 10px; }
+  .uc-list { list-style: none; }
+  .uc-list li {
+    font-size: 13px; color: var(--text-sm);
+    padding: 2px 0;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .uc-list li::before {
+    content: '•';
+    color: var(--purple);
+    font-weight: 700;
+  }
+  .uc-list.actions li::before { content: '◦'; color: var(--text-muted); }
+
+  .textarea-box {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px; font-family: inherit;
+    background: #f9fafb;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    color: var(--text);
+  }
+  .textarea-box:focus { border-color: var(--purple); }
+
+  .upload-box {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px; color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: border-color .15s;
+  }
+  .upload-box:hover { border-color: var(--purple); color: var(--purple); }
+
+  .btn-submit {
+    width: 100%;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 4px;
+    transition: background .15s;
+  }
+  .btn-submit:hover { background: var(--purple-hover); }
+
+  /* Inline use-cases expand */
+  .uc-inline-title {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .07em;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+  .uc-inline-list { list-style: none; margin-bottom: 4px; }
+  .uc-inline-list li {
+    font-size: 12px; color: var(--text-sm);
+    padding: 2px 0;
+    display: flex; align-items: flex-start; gap: 6px;
+    line-height: 1.4;
+  }
+  .uc-inline-list li::before { content: '•'; color: var(--purple); font-weight: 900; flex-shrink:0; }
+  .uc-inline-list.actions li::before { content: '◦'; color: var(--text-muted); }
+  .use-cases-btn.open { color: var(--purple); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">S</div>
+    <span style="font-size:12px;font-weight:600;color:#6b7280;">SACUMEN</span>
+    <span class="logo-text" style="margin-left:4px;">ConnectX</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0"/><path d="M15.54 8.46a5 5 0 0 0-7.07 0M8.46 15.54a5 5 0 0 0 7.07 0"/></svg>
+      Pre-Built Connectors
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+      Lab as a Service
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      AI Monitoring
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Testing
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Support
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="user-avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Alex Johnson</div>
+        <div class="user-role">VP of Engineering</div>
+      </div>
+    </div>
+    <div class="sign-out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </div>
+  </div>
+</aside>
+
+<!-- Topbar -->
+<header class="topbar">
+  <span class="topbar-company">SecureTech Inc.</span>
+  <div class="topbar-right">
+    <div class="notif-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="notif-badge">7</div>
+    </div>
+    <div class="profile-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Pre-Built Connectors</h1>
+      <p class="page-subtitle">1,050+ connectors across 32 categories. Full source code ownership.</p>
+    </div>
+    <button class="btn-request" onclick="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Request Connector
+    </button>
+  </div>
+
+  <!-- My Connectors Section -->
+  <div class="section">
+    <div class="section-title">
+      <span>🚀</span> My Connectors (20)
+    </div>
+
+    <!-- Ready for Deployment -->
+    <div class="sub-label ready">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      READY FOR DEPLOYMENT (10)
+    </div>
+
+    <div class="connector-grid">
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fff0eb;">📊</div>
+          <div class="connector-info">
+            <div class="connector-name">Splunk Ente...</div>
+            <div class="connector-meta">SIEM · v2.9.1</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#eff6ff;">💎</div>
+          <div class="connector-info">
+            <div class="connector-name">Microsoft A...</div>
+            <div class="connector-meta">SIEM · v3.0.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#f0fdf4;">🛡️</div>
+          <div class="connector-info">
+            <div class="connector-name">Palo Alto C...</div>
+            <div class="connector-meta">XDR · v4.1.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef9c3;">🦅</div>
+          <div class="connector-info">
+            <div class="connector-name">Cr... EDR</div>
+            <div class="connector-meta">v3.2.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+          <span class="tag tag-update">Update</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef3c7;">⚡</div>
+          <div class="connector-info">
+            <div class="connector-name">Splunk SOAR</div>
+            <div class="connector-meta">SOAR · v5.0.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fff7ed;">🎭</div>
+          <div class="connector-info">
+            <div class="connector-name">O... IAM</div>
+            <div class="connector-meta">IAM · v2.5.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+          <span class="tag tag-update">Update</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#f0fdf4;">☁️</div>
+          <div class="connector-info">
+            <div class="connector-name">AWS Securi...</div>
+            <div class="connector-meta">Cloud Security · v1.9.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#ede9fe;">🎫</div>
+          <div class="connector-info">
+            <div class="connector-name">ServiceNo...</div>
+            <div class="connector-meta">Ticketing System · v5.0.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef9c3;">🏰</div>
+          <div class="connector-info">
+            <div class="connector-name">Palo Alto N...</div>
+            <div class="connector-meta">Firewalls · v4.0.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef3c7;">🐕</div>
+          <div class="connector-info">
+            <div class="connector-name">Datadog M...</div>
+            <div class="connector-meta">Cloud Monitoring · v3.5.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-guide">Guide</span>
+          <span class="tag tag-json">JSON</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Building -->
+    <div class="sub-label building">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      BUILDING (5)
+    </div>
+
+    <div class="connector-grid">
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef9c3;">🦅</div>
+          <div class="connector-info">
+            <div class="connector-name">CrowdStrike Falc...</div>
+            <div class="connector-meta">XDR · v3.2.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-update">Update</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#eff6ff;">🛡️</div>
+          <div class="connector-info">
+            <div class="connector-name">MS Defender for Endpoint</div>
+            <div class="connector-meta">EDR · v2.8.0</div>
+          </div>
+        </div>
+        <div class="connector-tags"></div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#f0fdf4;">🛡️</div>
+          <div class="connector-info">
+            <div class="connector-name">Palo Alto Prisma Cloud</div>
+            <div class="connector-meta">Cloud Security · v2.8.0</div>
+          </div>
+        </div>
+        <div class="connector-tags"></div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#ede9fe;">🔍</div>
+          <div class="connector-info">
+            <div class="connector-name">Tenable VM</div>
+            <div class="connector-meta">Vulnerability Management · v4.0.0</div>
+          </div>
+        </div>
+        <div class="connector-tags">
+          <span class="tag tag-update">Update</span>
+        </div>
+      </div>
+
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef9c3;">✉️</div>
+          <div class="connector-info">
+            <div class="connector-name">Proofpoint Email Security</div>
+            <div class="connector-meta">Email Security · v2.1.0</div>
+          </div>
+        </div>
+        <div class="connector-tags"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Pending -->
+    <div class="sub-label pending">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      PENDING (5)
+    </div>
+
+    <div class="connector-grid">
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#eff6ff;">🛡️</div>
+          <div class="connector-info">
+            <div class="connector-name">Cortex XSOAR</div>
+            <div class="connector-meta">SOAR · v4.0.0</div>
+          </div>
+        </div>
+      </div>
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#f0fdf4;">🏛️</div>
+          <div class="connector-info">
+            <div class="connector-name">CyberArk PAM</div>
+            <div class="connector-meta">IAM · v3.0.0</div>
+          </div>
+        </div>
+      </div>
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef3c7;">🛡️</div>
+          <div class="connector-info">
+            <div class="connector-name">FortiGate</div>
+            <div class="connector-meta">Firewalls · v3.2.0</div>
+          </div>
+        </div>
+      </div>
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#fef9c3;">📡</div>
+          <div class="connector-info">
+            <div class="connector-name">Recorded Future</div>
+            <div class="connector-meta">Threat Intelligence · v2.5.0</div>
+          </div>
+        </div>
+      </div>
+      <div class="connector-card">
+        <div class="connector-card-top">
+          <div class="connector-icon" style="background:#ede9fe;">☁️</div>
+          <div class="connector-info">
+            <div class="connector-name">Salesforce CRM</div>
+            <div class="connector-meta">CRM · v4.2.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommended Section -->
+  <div class="section">
+    <div class="section-title">
+      <span>⭐</span> Recommended for SecureTech Inc.
+    </div>
+    <div class="rec-grid">
+      <div class="rec-card">
+        <div class="rec-card-top">
+          <div class="rec-icon" style="background:#fef9c3;">🤖</div>
+          <div>
+            <div class="rec-name">SentinelOne Singularity XDR</div>
+            <div class="rec-cat">XDR</div>
+          </div>
+        </div>
+        <p class="rec-desc">Top XDR choice for autonomous threat response</p>
+        <button class="btn-req-sm" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+      <div class="rec-card">
+        <div class="rec-card-top">
+          <div class="rec-icon" style="background:#eff6ff;">🌐</div>
+          <div>
+            <div class="rec-name">Zscaler ZTNA</div>
+            <div class="rec-cat">Network Security</div>
+          </div>
+        </div>
+        <p class="rec-desc">Zero-trust network access for hybrid environments</p>
+        <button class="btn-req-sm" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+      <div class="rec-card">
+        <div class="rec-card-top">
+          <div class="rec-icon" style="background:#fef9c3;">🔐</div>
+          <div>
+            <div class="rec-name">Varonis Data Security</div>
+            <div class="rec-cat">DSPM</div>
+          </div>
+        </div>
+        <p class="rec-desc">Critical for data security posture management</p>
+        <button class="btn-req-sm" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Browse -->
+  <div class="section">
+    <div class="search-bar">
+      <div class="search-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <input type="text" placeholder="Search 1,050+ connectors...">
+    </div>
+
+    <div class="cat-section">
+      <div class="cat-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        CATEGORIES
+      </div>
+      <div class="cat-tags">
+        <span class="cat-tag active">All (88)</span>
+        <span class="cat-tag">SIEM (10)</span>
+        <span class="cat-tag">SOAR (4)</span>
+        <span class="cat-tag">XDR (5)</span>
+        <span class="cat-tag">EDR (4)</span>
+        <span class="cat-tag">IAM (4)</span>
+        <span class="cat-tag">Cloud Security (4)</span>
+        <span class="cat-tag">Cloud Applications (2)</span>
+        <span class="cat-tag">Cloud Monitoring (2)</span>
+        <span class="cat-tag">Ticketing System (3)</span>
+        <span class="cat-tag">DevOps (3)</span>
+        <span class="cat-tag">DSPM (1)</span>
+        <span class="cat-tag">Firewalls (3)</span>
+        <span class="cat-tag">CRM (2)</span>
+        <span class="cat-tag">Data Storage (2)</span>
+        <span class="cat-tag">Vulnerability Managemen...</span>
+        <span class="cat-tag">Email Security (2)</span>
+        <span class="cat-tag">Network Security (2)</span>
+        <span class="cat-tag">Threat Intelligence (2)</span>
+        <span class="cat-tag">Analytics Software (2)</span>
+        <span class="cat-tag">Communication &amp; Collab...</span>
+        <span class="cat-tag">Data Loss Prevention (DL...</span>
+        <span class="cat-tag">Cloud Storage (3)</span>
+        <span class="cat-tag">HRMS (2)</span>
+        <span class="cat-tag">ITSM (2)</span>
+        <span class="cat-tag">Application Security (2)</span>
+        <span class="cat-tag">Incident Response (2)</span>
+        <span class="cat-tag">Endpoint Protection (2)</span>
+        <span class="cat-tag">OT/IOT Security (2)</span>
+        <span class="cat-tag">Risk Management (2)</span>
+        <span class="cat-tag">Finance and Accounting (...</span>
+        <span class="cat-tag">Marketing and Advertisin...</span>
+        <span class="cat-tag">Mobile Device Managem...</span>
+      </div>
+    </div>
+
+    <!-- All Connectors Grid -->
+    <div class="all-grid">
+
+      <!-- IBM QRadar - expanded use cases -->
+      <div class="all-card">
+        <div class="all-card-top">
+          <div class="all-icon" style="background:#eff6ff; font-size:22px;">🔵</div>
+          <div>
+            <div class="all-name">IBM QRadar SIEM</div>
+            <div class="all-cat">SIEM · v4.1.0</div>
+          </div>
+        </div>
+        <p class="all-desc">Full QRadar integration with offense management and DSM support</p>
+
+        <!-- Use Cases toggle - open state -->
+        <button class="use-cases-btn open" onclick="toggleUseCases(this)" style="margin-bottom:10px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Use Cases
+          <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate(180deg);"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        <div class="uc-expand">
+          <div class="uc-inline-title">INGESTION</div>
+          <ul class="uc-inline-list">
+            <li>DSM-based log parsing</li>
+            <li>Flow data collection</li>
+            <li>Offense event ingestion</li>
+          </ul>
+          <div class="uc-inline-title" style="margin-top:10px;">ACTIONS</div>
+          <ul class="uc-inline-list actions">
+            <li>Manage offenses</li>
+            <li>Create custom rules</li>
+            <li>Update reference sets</li>
+          </ul>
+        </div>
+
+        <div style="display:flex;gap:6px;margin:12px 0 10px;">
+          <span class="chip purple">SIEM</span>
+          <span class="chip gray">Enterprise</span>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:12px;">
+        <button class="btn-req-sm" style="width:100%;justify-content:center;" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+
+      <!-- CrowdStrike Next-Gen SIEM -->
+      <div class="all-card">
+        <div class="all-card-top">
+          <div class="all-icon" style="background:#fef9c3;">🦅</div>
+          <div>
+            <div class="all-name">CrowdStrike Next-Gen SIEM</div>
+            <div class="all-cat">SIEM · v2.0.0</div>
+          </div>
+        </div>
+        <p class="all-desc">Next-generation SIEM with AI-powered threat detection</p>
+        <button class="use-cases-btn" onclick="toggleUseCases(this)" style="margin-bottom:10px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Use Cases
+          <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="uc-expand" style="display:none;"></div>
+        <div style="display:flex;gap:6px;margin:8px 0 12px;">
+          <span class="chip purple">SIEM</span>
+          <span class="chip gray">AI</span>
+        </div>
+        <button class="btn-req-sm" style="width:100%;justify-content:center;" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+
+      <!-- Elastic SIEM -->
+      <div class="all-card">
+        <div class="all-card-top">
+          <div class="all-icon" style="background:#ede9fe;">🔍</div>
+          <div>
+            <div class="all-name">Elastic SIEM</div>
+            <div class="all-cat">SIEM · v2.3.0</div>
+          </div>
+        </div>
+        <p class="all-desc">Open-source SIEM with detection engine and ML jobs</p>
+        <button class="use-cases-btn" onclick="toggleUseCases(this)" style="margin-bottom:10px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Use Cases
+          <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="uc-expand" style="display:none;"></div>
+        <div style="display:flex;gap:6px;margin:8px 0 12px;">
+          <span class="chip purple">SIEM</span>
+          <span class="chip gray">ML</span>
+        </div>
+        <button class="btn-req-sm" style="width:100%;justify-content:center;" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+
+      <!-- Rapid7 InsightIDR -->
+      <div class="all-card">
+        <div class="all-card-top">
+          <div class="all-icon" style="background:#fef3c7;">⚡</div>
+          <div>
+            <div class="all-name">Rapid7 InsightIDR</div>
+            <div class="all-cat">SIEM · v3.1.0</div>
+          </div>
+        </div>
+        <p class="all-desc">Cloud-native SIEM with user behavior analytics and endpoint visibility</p>
+        <button class="use-cases-btn" onclick="toggleUseCases(this)" style="margin-bottom:10px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Use Cases
+          <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="uc-expand" style="display:none;"></div>
+        <div style="display:flex;gap:6px;margin:8px 0 12px;">
+          <span class="chip purple">SIEM</span>
+          <span class="chip gray">UBA</span>
+        </div>
+        <button class="btn-req-sm" style="width:100%;justify-content:center;" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+
+      <!-- Palo Alto Cortex XSIAM -->
+      <div class="all-card">
+        <div class="all-card-top">
+          <div class="all-icon" style="background:#f0fdf4;">🛡️</div>
+          <div>
+            <div class="all-name">Palo Alto Cortex XSIAM</div>
+            <div class="all-cat">SIEM · v2.2.0</div>
+          </div>
+        </div>
+        <p class="all-desc">AI-driven SOC platform combining SIEM, SOAR, and threat intelligence</p>
+        <button class="use-cases-btn" onclick="toggleUseCases(this)" style="margin-bottom:10px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Use Cases
+          <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="uc-expand" style="display:none;"></div>
+        <div style="display:flex;gap:6px;margin:8px 0 12px;">
+          <span class="chip purple">SIEM</span>
+          <span class="chip gray">AI</span>
+        </div>
+        <button class="btn-req-sm" style="width:100%;justify-content:center;" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+
+      <!-- Securonix -->
+      <div class="all-card">
+        <div class="all-card-top">
+          <div class="all-icon" style="background:#fef9c3;">🔐</div>
+          <div>
+            <div class="all-name">Securonix</div>
+            <div class="all-cat">SIEM · v3.0.0</div>
+          </div>
+        </div>
+        <p class="all-desc">Next-gen SIEM with advanced UEBA and long-term log management</p>
+        <button class="use-cases-btn" onclick="toggleUseCases(this)" style="margin-bottom:10px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Use Cases
+          <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="uc-expand" style="display:none;"></div>
+        <div style="display:flex;gap:6px;margin:8px 0 12px;">
+          <span class="chip purple">SIEM</span>
+          <span class="chip gray">UEBA</span>
+        </div>
+        <button class="btn-req-sm" style="width:100%;justify-content:center;" onclick="openModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Request Connector
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h2 class="modal-title">Request a Connector</h2>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div class="form-group">
+      <label class="form-label">Select a Connector (optional)</label>
+      <select class="select-box" onchange="updateUseCases(this)">
+        <option value="marketo">Marketo (Marketing and Advertising)</option>
+        <option value="sentinelone">SentinelOne Singularity XDR</option>
+        <option value="zscaler">Zscaler ZTNA</option>
+        <option value="varonis">Varonis Data Security</option>
+        <option value="other">Other...</option>
+      </select>
+
+      <div class="use-cases-box" id="useCasesBox">
+        <div class="uc-header">CURRENT USE CASES — MARKETO</div>
+        <div class="uc-section-title">INGESTION</div>
+        <ul class="uc-list">
+          <li>Lead activity logs</li>
+          <li>Email engagement events</li>
+          <li>Campaign performance metrics</li>
+        </ul>
+        <div class="uc-section-title">ACTIONS</div>
+        <ul class="uc-list actions">
+          <li>Trigger campaigns</li>
+          <li>Update lead scores</li>
+          <li>Manage smart lists</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Additional Use Cases</label>
+      <textarea class="textarea-box" placeholder="Describe your additional use cases..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Upload Use Case Document (PDF, DOC, etc.)</label>
+      <div class="upload-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Click to upload a file
+      </div>
+    </div>
+
+    <button class="btn-submit">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Submit Request
+    </button>
+  </div>
+</div>
+
+<script>
+  function toggleUseCases(btn) {
+    const expand = btn.nextElementSibling;
+    const chevron = btn.querySelector('.chevron');
+    const isOpen = expand.style.display !== 'none';
+    expand.style.display = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    btn.classList.toggle('open', !isOpen);
+  }
+
+  function openModal() {
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  const useCaseData = {
+    marketo: {
+      title: 'MARKETO',
+      ingestion: ['Lead activity logs', 'Email engagement events', 'Campaign performance metrics'],
+      actions: ['Trigger campaigns', 'Update lead scores', 'Manage smart lists']
+    },
+    sentinelone: {
+      title: 'SENTINELONE',
+      ingestion: ['Threat alerts and detections', 'Agent telemetry data', 'Incident timelines'],
+      actions: ['Quarantine endpoints', 'Run remote scripts', 'Update agent policies']
+    },
+    zscaler: {
+      title: 'ZSCALER ZTNA',
+      ingestion: ['User access logs', 'Policy violations', 'Network traffic events'],
+      actions: ['Block users', 'Update access policies', 'Export audit logs']
+    },
+    varonis: {
+      title: 'VARONIS',
+      ingestion: ['Data access events', 'Sensitive data findings', 'User behavior analytics'],
+      actions: ['Revoke permissions', 'Create data alerts', 'Generate compliance reports']
+    },
+    other: {
+      title: 'CUSTOM CONNECTOR',
+      ingestion: ['Specify your data ingestion needs'],
+      actions: ['Specify your action requirements']
+    }
+  };
+
+  function updateUseCases(sel) {
+    const d = useCaseData[sel.value] || useCaseData.other;
+    const box = document.getElementById('useCasesBox');
+    box.innerHTML = `
+      <div class="uc-header">CURRENT USE CASES — ${d.title}</div>
+      <div class="uc-section-title">INGESTION</div>
+      <ul class="uc-list">${d.ingestion.map(i => `<li>${i}</li>`).join('')}</ul>
+      <div class="uc-section-title">ACTIONS</div>
+      <ul class="uc-list actions">${d.actions.map(a => `<li>${a}</li>`).join('')}</ul>
+    `;
+  }
+
+  // Category tag toggle
+  document.querySelectorAll('.cat-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      document.querySelectorAll('.cat-tag').forEach(t => t.classList.remove('active'));
+      tag.classList.add('active');
+    });
+  });
+
+  // Close modal on Escape
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

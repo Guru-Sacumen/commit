@@ -59,14 +59,24 @@ export function useAdminData() {
 
   const token = localStorage.getItem('connectx_token');
   const tenantFromStorage = localStorage.getItem('connectx_tenant_id') || '';
-  const tenantFromToken = decodeTokenPayload(token)?.tenant_id || '';
-  const effectiveTenantId = tenantFromToken || tenantFromStorage || TENANT_ID;
+  const decodedToken = decodeTokenPayload(token);
+  const tenantFromToken = decodedToken?.tenant_id || decodedToken?.tid || '';
+  const [effectiveTenantId, setEffectiveTenantId] = useState(
+    tenantFromToken || tenantFromStorage || TENANT_ID,
+  );
   const selectedCompany = companies.find((c) => c.id === selectedTenant) || null;
   const currentTenant = isSuper
     ? viewMode === 'detail'
       ? selectedTenant
       : ''
     : effectiveTenantId;
+
+  useEffect(() => {
+    const nextTenantId = tenantFromToken || tenantFromStorage || TENANT_ID;
+    if (nextTenantId && nextTenantId !== effectiveTenantId) {
+      setEffectiveTenantId(nextTenantId);
+    }
+  }, [tenantFromToken, tenantFromStorage, effectiveTenantId]);
 
   const catalogById = useMemo(
     () => new Map(connectorCatalog.map((connector) => [connector.id, connector])),
@@ -269,6 +279,7 @@ export function useAdminData() {
     tenantFromStorage,
     tenantFromToken,
     effectiveTenantId,
+    setEffectiveTenantId,
     selectedCompany,
     currentTenant,
     catalogById,

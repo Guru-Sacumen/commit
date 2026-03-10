@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../common/hooks/useAuth';
 import CompanyOverview from '../../modules/AdminPanel/components/CompanyOverview';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 const AdminOverview = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -24,7 +26,7 @@ const AdminOverview = () => {
         setLoading(true);
         
         // Fetch companies
-        const companiesRes = await fetch('http://127.0.0.1:8000/admin/companies', {
+        const companiesRes = await fetch(`${API_BASE_URL}/superadmin/companies`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (companiesRes.ok) {
@@ -32,8 +34,8 @@ const AdminOverview = () => {
           setCompanies(companiesData);
         }
 
-        // Fetch OAuth users
-        const oauthRes = await fetch('http://127.0.0.1:8000/admin/oauth-users', {
+        // Fetch users
+        const oauthRes = await fetch(`${API_BASE_URL}/superadmin/users`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (oauthRes.ok) {
@@ -42,7 +44,7 @@ const AdminOverview = () => {
         }
 
         // Fetch connector catalog
-        const catalogRes = await fetch('http://127.0.0.1:8000/admin/connector-catalog', {
+        const catalogRes = await fetch(`${API_BASE_URL}/connectors/catalog`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (catalogRes.ok) {

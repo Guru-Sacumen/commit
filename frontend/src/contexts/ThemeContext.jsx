@@ -11,11 +11,11 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Default theme is dark as per PRD
+  // Default theme is light
   const [theme, setTheme] = useState(() => {
     // Check localStorage for saved theme preference
     const savedTheme = localStorage.getItem('connectx-theme');
-    return savedTheme || 'dark';
+    return savedTheme || 'light';
   });
 
   // Apply theme to document root
