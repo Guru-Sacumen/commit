@@ -1,7 +1,7 @@
 """Add JWT auth tables and columns
 
 Revision ID: add_jwt_auth_001
-Revises: create_connector_categories_table
+Revises: conn_categories
 Create Date: 2026-03-10
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'add_jwt_auth_001'
-down_revision: Union[str, None] = 'create_connector_categories_table'
+down_revision: Union[str, None] = 'conn_categories'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

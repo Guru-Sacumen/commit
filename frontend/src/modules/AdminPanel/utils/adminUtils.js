@@ -14,7 +14,13 @@ export function decodeTokenPayload(token) {
     if (!payload) return null;
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-    return JSON.parse(atob(padded));
+    const decoded = JSON.parse(atob(padded))
+
+    return {
+      ...decoded,
+      tenant_id: decoded.tid || decoded.tenant_id,
+      user_id: decoded.sub,
+    };
   } catch {
     return null;
   }
