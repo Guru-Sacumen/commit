@@ -89,8 +89,12 @@ const CompaniesHome = ({
         <Dialog 
           open={showCompanyForm} 
           onClose={onToggleCompanyForm}
-          maxWidth="90%"
-          fullWidth
+          PaperProps={{
+            sx: {
+              width: '500px',
+              maxWidth: '90vw'
+            }
+          }}
         >
           <DialogTitle>
             Create New Company

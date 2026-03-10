@@ -96,11 +96,7 @@ export default function UserProfile() {
   };
 
   if (!userData) {
-    return (
-      <div className="user-profile-loading">
-        <div className="loading-spinner">Loading...</div>
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -53,7 +53,6 @@ const Header = () => {
 
         <div 
           className="flex items-center gap-3 cursor-pointer p-1.5 rounded-xl transition-all hover:bg-bg-page hover:shadow-[inset_0_0_0_1px_var(--border-light)] whitespace-nowrap"
-          onClick={() => navigate('/profile')}
         >
           <div className="flex flex-col items-end">
             <div className="text-sm font-bold text-text-main leading-tight">{userName}</div>

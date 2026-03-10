@@ -879,6 +879,7 @@
   justify-content: center;
   min-height: 200px;
   gap: 24px;
+  width: 100vh;
 }
 
 .connector-action {

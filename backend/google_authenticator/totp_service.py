@@ -115,6 +115,14 @@ class TOTPService:
         db.commit()
     
     @staticmethod
+    def reset_totp(db: Session, user: User) -> None:
+        """Reset TOTP for user - keep MFA enabled but force re-setup"""
+        user.totp_secret = None
+        user.totp_verified = False
+        user.mfa_enabled = True  # Keep MFA enabled to force setup
+        db.commit()
+    
+    @staticmethod
     def is_totp_required(user: User) -> bool:
         """Check if TOTP verification is required for user"""
         return user.mfa_enabled and user.totp_verified

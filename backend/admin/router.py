@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from auth import get_current_admin, get_db, hash_password
 from models import Membership, RoleEnum, User, Tenant, Connector
 from schemas import UserCreateRequest, UserOut, UserPasswordUpdate, UserUpdate
+from google_authenticator.totp_service import TOTPService
 
 
 router = APIRouter(prefix="/admin/{tenant_id}", tags=["admin"])
@@ -273,3 +274,29 @@ def get_connector_requests(
         }
         for request in requests
     ]
+
+
+@router.post("/users/{user_id}/reset-2fa", response_model=dict)
+def reset_user_2fa(
+    tenant_id: str,
+    user_id: str,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    """Reset 2FA for a user - disables Google Authenticator and requires user to set it up again"""
+    membership = (
+        db.query(Membership)
+        .filter(Membership.tenant_id == tenant_id, Membership.user_id == user_id)
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=404, detail="User membership not found")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Use TOTPService to reset TOTP (keeps MFA enabled for re-setup)
+    TOTPService.reset_totp(db, user)
+    
+    return {"ok": True, "message": "2FA reset successfully. User will need to set up Google Authenticator again."}

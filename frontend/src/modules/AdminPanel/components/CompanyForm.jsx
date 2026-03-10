@@ -3,7 +3,10 @@ import {
   Tabs,
   Tab,
   Box,
-  Typography
+  Typography,
+  TextField,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
 import { Eye, EyeOff } from 'lucide-react';
 import {
@@ -204,7 +207,7 @@ function CompanyForm({
   }
 
   return (
-    <div>
+    <div className="mt-2">
       <ModernAlert 
         open={!!error} 
         message={error} 
@@ -212,212 +215,74 @@ function CompanyForm({
         onClose={() => setError('')}
       />
 
-      <form className="company-create-form" onSubmit={handleSubmit}>
-        <div className="company-form-fields">
-          <div className="field">
-            <label>
-              Company Name
-              <input
-                placeholder="company name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </label>
-          </div>
-          <div className="field max-[300px]:">
-            <label>
-              Admin Email
-              <input
-                placeholder="admin email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </label>
-          </div>
-          <div className="field">
-            <label>
-              Admin Full Name
-              <input
-                placeholder="admin full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </label>
-          </div>
-          <div className="field">
-            <label>
-              Admin Password
-              <div className="password-input-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="admin password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </label>
-          </div>
-        </div>
-        <hr></hr>
-        <div className="connector-selection-section">
-          <h4 className="text-blue-600 font-bold">Select Prebuilt Connectors</h4>
-          <div className="connector-toolbar pl-2">
-            <label>
-              Search Connectors
-              <input
-                type="search"
-                placeholder="Search by connector name, type, or id"
-                value={connectorSearch}
-                onChange={(e) => setConnectorSearch(e.target.value)}
-              />
-            </label>
-            <label>
-              Type
-              <select
-                value={connectorTypeFilter}
-                onChange={(e) => setConnectorTypeFilter(e.target.value)}
-              >
-                {connectorTypeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type === "ALL" ? "All Types" : type}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Sort
-              <select
-                value={connectorSort}
-                onChange={(e) => setConnectorSort(e.target.value)}
-              >
-                <option value="asc">A → Z</option>
-                <option value="desc">Z → A</option>
-              </select>
-            </label>
-          </div>
+      <form onSubmit={handleSubmit}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <TextField
+            label="Company Name"
+            placeholder="company name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            fullWidth
+            variant="outlined"
+            size="small"
+          />
 
-          <div className="connector-grid-layout" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <section className="connector-card-panel">
-              <div className="connector-panel-head">
-                <h3>Marketplace ({filteredMarketplaceCatalog.length})</h3>
-                <div className="connector-panel-actions">
-                  <button type="button" onClick={selectAllFilteredMarketplace}>
-                    Select Filtered
-                  </button>
-                  <button type="button" onClick={clearMarketplaceSelection}>
-                    Clear
-                  </button>
-                </div>
-              </div>
-              <div className="connector-card-grid">
-                {filteredMarketplaceCatalog.length === 0 ? (
-                  <div className="connector-empty">
-                    No connectors available.
-                  </div>
-                ) : (
-                  filteredMarketplaceCatalog.map((connector) => (
-                    <label
-                      key={connector.id}
-                      className={`connector-grid-card ${
-                        selectedMarketConns.has(connector.id) ? "selected" : ""
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedMarketConns.has(connector.id)}
-                        onChange={() => toggleMarketSelection(connector.id)}
-                      />
-                      <div className="connector-grid-name">
-                        {connector.name}
-                      </div>
-                      <div className="connector-grid-type">
-                        {connector.type}
-                      </div>
-                      <div className="connector-grid-id">{connector.id}</div>
-                    </label>
-                  ))
-                )}
-              </div>
-              <button
-                type="button"
-                className="connector-action"
-                onClick={purchaseSelected}
-                disabled={selectedMarketConns.size === 0}
-              >
-                Add Selected ({selectedMarketConns.size})
-              </button>
-            </section>
+          <TextField
+            label="Admin Email"
+            placeholder="admin email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            fullWidth
+            variant="outlined"
+            type="email"
+            size="small"
+          />
 
-            <section className="connector-card-panel">
-              <div className="connector-panel-head">
-                <h3>Selected ({filteredPrebuiltCatalog.length})</h3>
-                <div className="connector-panel-actions">
-                  <button type="button" onClick={selectAllFilteredPrebuilt}>
-                    Select Filtered
-                  </button>
-                  <button type="button" onClick={clearPrebuiltSelection}>
-                    Clear
-                  </button>
-                </div>
-              </div>
-              <div className="connector-card-grid">
-                {filteredPrebuiltCatalog.length === 0 ? (
-                  <div className="connector-empty">No connectors selected.</div>
-                ) : (
-                  filteredPrebuiltCatalog.map((connector) => (
-                    <label
-                      key={connector.id}
-                      className={`connector-grid-card ${
-                        selectedPrebuiltConns.has(connector.id)
-                          ? "selected"
-                          : ""
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedPrebuiltConns.has(connector.id)}
-                        onChange={() => togglePrebuiltSelection(connector.id)}
-                      />
-                      <div className="connector-grid-name">
-                        {connector.name}
-                      </div>
-                      <div className="connector-grid-type">
-                        {connector.type}
-                      </div>
-                      <div className="connector-grid-id">{connector.id}</div>
-                    </label>
-                  ))
-                )}
-              </div>
-              <button
-                type="button"
-                className="connector-action danger"
-                onClick={moveSelectedToMarketplace}
-                disabled={selectedPrebuiltConns.size === 0}
-              >
-                Remove Selected ({selectedPrebuiltConns.size})
-              </button>
-            </section>
-          </div>
-        </div>
+          <TextField
+            label="Admin Full Name"
+            placeholder="admin full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            fullWidth
+            variant="outlined"
+            size="small"
+          />
 
-        <div className="form-actions">
+          <TextField
+            label="Admin Password"
+            placeholder="admin password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            fullWidth
+            variant="outlined"
+            type={showPassword ? 'text' : 'password'}
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                    size="small"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
           <button type="submit" className="primary-btn">
             Create Company
           </button>
-        </div>
+        </Box>
       </form>
     </div>
   );
