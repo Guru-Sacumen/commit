@@ -1,0 +1,43 @@
+# models/__init__.py - Shared SQLAlchemy database models
+from .base import Base, RoleEnum, ConnectorRequestStatus
+from .user import User, PasswordReset, RefreshToken
+from .tenant import Tenant, Membership
+from .connector import (
+    Connector, 
+    ConnectorCatalog, 
+    ConnectorCategory, 
+    ConnectorRequest,
+)
+from .ticket import (
+    Notification, Ticket, TicketComment, TicketAttachment,
+    PriorityEnum, StatusEnum, VisibilityEnum
+)
+from .audit import AuditEvent, EmailNotification, EmailStatusEnum
+from .escalation import EscalationLog
+
+# Export all models for easy importing
+__all__ = [
+    "Base",
+    "RoleEnum",
+    "ConnectorRequestStatus",
+    "User",
+    "PasswordReset",
+    "RefreshToken",
+    "Tenant",
+    "Membership",
+    "Connector",
+    "ConnectorCatalog",
+    "ConnectorCategory", 
+    "ConnectorRequest",
+    "Notification",
+    "Ticket",
+    "TicketComment",
+    "TicketAttachment",
+    "PriorityEnum",
+    "StatusEnum",
+    "VisibilityEnum",
+    "AuditEvent",
+    "EmailNotification",
+    "EmailStatusEnum",
+    "EscalationLog",
+]
